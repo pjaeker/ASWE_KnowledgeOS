@@ -1,0 +1,6 @@
+{
+  "security.workspace.trust.enabled": true,
+  "security.workspace.trust.untrustedFiles": "newWindow",
+  "terminal.integrated.scrollback": 5000,
+  "files.eol": "\n"
+}

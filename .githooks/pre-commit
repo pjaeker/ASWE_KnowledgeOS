@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# OptionB pre-commit hook: scan STAGED changes only (fast).
+# Skip via: SKIP_OPTIONB_SCAN=1 git commit -m "..."
+if [ "${SKIP_OPTIONB_SCAN:-0}" = "1" ]; then
+  echo "SKIP_OPTIONB_SCAN=1 -> skipping OptionB incremental scan."
+  exit 0
+fi
+
+bash scripts/optionb/scan_incremental.sh --scope staged
