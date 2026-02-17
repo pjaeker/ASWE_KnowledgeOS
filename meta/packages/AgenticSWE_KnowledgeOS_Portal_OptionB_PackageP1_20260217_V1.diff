@@ -1,0 +1,493 @@
+diff --git a/scripts/validate_taxonomy_glossary_mapping.py b/scripts/validate_taxonomy_glossary_mapping.py
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/scripts/validate_taxonomy_glossary_mapping.py
+@@ -0,0 +1,74 @@
++#!/usr/bin/env python3
++"""
++validate_taxonomy_glossary_mapping.py
++
++Hardgate (hard gate, blocks merge): Validiert, dass jeder Taxonomie-Tag genau 1 Glossar-Canonical-Term mapped
++und dass keine TBD-Mappings existieren.
++
++Usage:
++  python scripts/validate_taxonomy_glossary_mapping.py \
++    --glossary meta/AgenticSWE_KnowledgeOS_Glossary_20260217_V6.md \
++    --taxonomy meta/AgenticSWE_KnowledgeOS_Taxonomy_20260217_V2.md
++"""
++from __future__ import annotations
++import argparse
++import re
++import sys
++from pathlib import Path
++
++TERM_RE = re.compile(r"- \*\*Term \(canonical\):\s*(.+?)\*\*")
++TABLE_HEADER = "| tag | maps_to_canonical_term | short_intent |"
++
++def parse_glossary_terms(text: str) -> set[str]:
++    terms = set()
++    for m in TERM_RE.finditer(text):
++        terms.add(m.group(1).strip())
++    return terms
++
++def parse_taxonomy_table(text: str) -> list[tuple[str,str,str]]:
++    start = text.find(TABLE_HEADER)
++    if start == -1:
++        raise ValueError("Mapping table header not found in taxonomy.")
++    lines = text[start:].splitlines()
++    rows = []
++    for ln in lines[2:]:
++        if not ln.strip().startswith("|"):
++            break
++        cols = [c.strip() for c in ln.strip().strip("|").split("|")]
++        if len(cols) < 3:
++            continue
++        tag, maps_to, intent = cols[0], cols[1], cols[2]
++        rows.append((tag, maps_to, intent))
++    return rows
++
++def main() -> int:
++    ap = argparse.ArgumentParser()
++    ap.add_argument("--glossary", required=True)
++    ap.add_argument("--taxonomy", required=True)
++    args = ap.parse_args()
++
++    g = Path(args.glossary).read_text(encoding="utf-8")
++    t = Path(args.taxonomy).read_text(encoding="utf-8")
++
++    terms = parse_glossary_terms(g)
++    rows = parse_taxonomy_table(t)
++
++    errors = []
++    for tag, maps_to, _ in rows:
++        if maps_to.strip() == "TBD":
++            errors.append(f"TBD mapping not allowed: {tag} -> TBD")
++            continue
++        if maps_to not in terms:
++            errors.append(f"Missing glossary canonical term: {tag} -> {maps_to}")
++
++    if errors:
++        print("FAILED: taxonomy↔glossary mapping invalid:\n")
++        for e in errors:
++            print(f"- {e}")
++        return 1
++
++    print(f"OK: {len(rows)} taxonomy tags map to existing glossary canonical terms.")
++    return 0
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+diff --git a/scripts/validate_frontmatter_tags.py b/scripts/validate_frontmatter_tags.py
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/scripts/validate_frontmatter_tags.py
+@@ -0,0 +1,110 @@
++#!/usr/bin/env python3
++"""
++validate_frontmatter_tags.py
++
++Hardgate (hard gate, blocks merge): Prüft Markdown-Frontmatter (YAML):
++- genau 1x tag `layer/*`
++- genau 1x tag `artifact/*`
++- alle tags müssen in Taxonomy-Allowlist sein
++
++Scope (allowlist paths):
++- meta/**
++- handbook/**
++- templates-harness/**
++- decisions-adr/**
++
++Usage:
++  python scripts/validate_frontmatter_tags.py --repo-root .
++"""
++from __future__ import annotations
++import argparse
++import json
++import re
++import sys
++from pathlib import Path
++
++FM_RE = re.compile(r"^---\n(.*?)\n---\n", re.S)
++TAGS_RE = re.compile(r"^tags:\s*(.*)$", re.M)
++
++def load_allowlist(repo_root: Path) -> set[str]:
++    p = repo_root / "meta" / "AgenticSWE_KnowledgeOS_Taxonomy_Allowlist_20260217_V1.json"
++    data = json.loads(p.read_text(encoding="utf-8"))
++    return set(data["tags"])
++
++def parse_frontmatter(md_text: str) -> dict | None:
++    m = FM_RE.match(md_text)
++    if not m:
++        return None
++    fm = m.group(1)
++    # minimal YAML parsing for tags list
++    tags = []
++    in_tags = False
++    for ln in fm.splitlines():
++        if ln.strip().startswith("tags:"):
++            # could be inline list, or start of block
++            in_tags = True
++            inline = ln.split(":",1)[1].strip()
++            if inline.startswith("[") and inline.endswith("]"):
++                inner = inline.strip("[]").strip()
++                if inner:
++                    tags += [t.strip().strip("'").strip('"') for t in inner.split(",")]
++            continue
++        if in_tags:
++            if re.match(r"^\w+:", ln):  # next YAML key
++                in_tags = False
++                continue
++            m2 = re.match(r"^\s*-\s*(.+)$", ln)
++            if m2:
++                tags.append(m2.group(1).strip().strip("'").strip('"'))
++    return {"tags": tags}
++
++def list_markdown_files(repo_root: Path) -> list[Path]:
++    scopes = ["meta", "handbook", "templates-harness", "decisions-adr"]
++    out=[]
++    for s in scopes:
++        p = repo_root / s
++        if not p.exists():
++            continue
++        out += list(p.rglob("*.md"))
++    return out
++
++def main() -> int:
++    ap = argparse.ArgumentParser()
++    ap.add_argument("--repo-root", default=".")
++    args = ap.parse_args()
++    repo_root = Path(args.repo_root)
++
++    allow = load_allowlist(repo_root)
++    errors=[]
++    files = list_markdown_files(repo_root)
++
++    for f in files:
++        txt = f.read_text(encoding="utf-8")
++        fm = parse_frontmatter(txt)
++        if fm is None:
++            errors.append(f"{f}: missing YAML frontmatter")
++            continue
++        tags = fm["tags"]
++        layer = [t for t in tags if t.startswith("layer/")]
++        art = [t for t in tags if t.startswith("artifact/")]
++
++        if len(layer) != 1:
++            errors.append(f"{f}: expected exactly 1 layer/* tag, got {layer}")
++        if len(art) != 1:
++            errors.append(f"{f}: expected exactly 1 artifact/* tag, got {art}")
++
++        unknown = [t for t in tags if t not in allow]
++        if unknown:
++            errors.append(f"{f}: unknown tags (not in taxonomy allowlist): {unknown}")
++
++    if errors:
++        print("FAILED: frontmatter/tag validation:\n")
++        for e in errors:
++            print(f"- {e}")
++        return 1
++
++    print(f"OK: validated {len(files)} markdown files in scope.")
++    return 0
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+diff --git a/scripts/check_links.py b/scripts/check_links.py
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/scripts/check_links.py
+@@ -0,0 +1,61 @@
++#!/usr/bin/env python3
++"""
++check_links.py
++
++Link-Check (link check, broken links): Prüft relative Markdown-Links innerhalb allowlist paths.
++
++Usage:
++  python scripts/check_links.py --repo-root .
++"""
++from __future__ import annotations
++import argparse
++import re
++from pathlib import Path
++
++LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
++
++def is_external(url: str) -> bool:
++    return url.startswith("http://") or url.startswith("https://") or url.startswith("mailto:")
++
++def list_md(repo_root: Path) -> list[Path]:
++    scopes = ["meta", "handbook", "templates-harness", "decisions-adr"]
++    out=[]
++    for s in scopes:
++        p = repo_root / s
++        if p.exists():
++            out += list(p.rglob("*.md"))
++    return out
++
++def main() -> int:
++    ap = argparse.ArgumentParser()
++    ap.add_argument("--repo-root", default=".")
++    args = ap.parse_args()
++    root = Path(args.repo_root)
++
++    errors=[]
++    files = list_md(root)
++    for f in files:
++        txt = f.read_text(encoding="utf-8")
++        for m in LINK_RE.finditer(txt):
++            url = m.group(1).strip()
++            if not url or is_external(url) or url.startswith("#"):
++                continue
++            url = url.split("#",1)[0]
++            if url.startswith("/"):
++                target = root / url.lstrip("/")
++            else:
++                target = (f.parent / url).resolve()
++            if not target.exists():
++                errors.append(f"{f}: broken link -> {url}")
++
++    if errors:
++        print("FAILED: broken links:\n")
++        for e in errors:
++            print(f"- {e}")
++        return 1
++
++    print(f"OK: checked links in {len(files)} markdown files.")
++    return 0
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+diff --git a/scripts/lint_repo.py b/scripts/lint_repo.py
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/scripts/lint_repo.py
+@@ -0,0 +1,50 @@
++#!/usr/bin/env python3
++"""
++lint_repo.py
++
++Lint (linting, style checks): sehr leichte Repo-Lints:
++- keine Tabs
++- Datei endet mit Newline
++
++Usage:
++  python scripts/lint_repo.py --repo-root .
++"""
++from __future__ import annotations
++import argparse
++from pathlib import Path
++
++def list_files(root: Path) -> list[Path]:
++    scopes = ["meta", "handbook", "templates-harness", "decisions-adr", "scripts"]
++    out=[]
++    for s in scopes:
++        p = root / s
++        if p.exists():
++            for f in p.rglob("*"):
++                if f.is_file() and f.suffix in [".md", ".py", ".json", ".yml", ".yaml", ".ts", ".tsx"]:
++                    out.append(f)
++    return out
++
++def main() -> int:
++    ap = argparse.ArgumentParser()
++    ap.add_argument("--repo-root", default=".")
++    args = ap.parse_args()
++    root = Path(args.repo_root)
++
++    errors=[]
++    for f in list_files(root):
++        b = f.read_bytes()
++        if b and b[-1] != 10:
++            errors.append(f"{f}: missing trailing newline")
++        if b.find(b"\t") != -1:
++            errors.append(f"{f}: contains tab character")
++
++    if errors:
++        print("FAILED: lint errors:\n")
++        for e in errors:
++            print(f"- {e}")
++        return 1
++    print("OK: lint passed.")
++    return 0
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+diff --git a/scripts/generate_taxonomy_allowlist_json.py b/scripts/generate_taxonomy_allowlist_json.py
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/scripts/generate_taxonomy_allowlist_json.py
+@@ -0,0 +1,51 @@
++#!/usr/bin/env python3
++"""
++generate_taxonomy_allowlist_json.py
++
++Export (export, machine-readable): erzeugt JSON-Allowlist aus Taxonomie-Mappingtabelle.
++
++Usage:
++  python scripts/generate_taxonomy_allowlist_json.py \
++    --taxonomy meta/AgenticSWE_KnowledgeOS_Taxonomy_20260217_V2.md \
++    --out meta/AgenticSWE_KnowledgeOS_Taxonomy_Allowlist_20260217_V1.json
++"""
++from __future__ import annotations
++import argparse
++import json
++from pathlib import Path
++
++TABLE_HEADER = "| tag | maps_to_canonical_term | short_intent |"
++
++def parse_tags(text: str) -> list[str]:
++    start = text.find(TABLE_HEADER)
++    if start == -1:
++        raise ValueError("Mapping table header not found.")
++    lines = text[start:].splitlines()
++    tags=[]
++    for ln in lines[2:]:
++        if not ln.strip().startswith("|"):
++            break
++        cols = [c.strip() for c in ln.strip().strip("|").split("|")]
++        if len(cols) >= 1:
++            tags.append(cols[0])
++    return tags
++
++def main() -> int:
++    ap = argparse.ArgumentParser()
++    ap.add_argument("--taxonomy", required=True)
++    ap.add_argument("--out", required=True)
++    args = ap.parse_args()
++
++    tax = Path(args.taxonomy).read_text(encoding="utf-8")
++    tags = sorted(set(parse_tags(tax)))
++    data = {
++        "generated_from": args.taxonomy,
++        "tag_count": len(tags),
++        "tags": tags,
++    }
++    Path(args.out).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
++    print(f"OK: wrote {len(tags)} tags to {args.out}")
++    return 0
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+diff --git a/meta/AgenticSWE_KnowledgeOS_Taxonomy_Allowlist_20260217_V1.json b/meta/AgenticSWE_KnowledgeOS_Taxonomy_Allowlist_20260217_V1.json
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/meta/AgenticSWE_KnowledgeOS_Taxonomy_Allowlist_20260217_V1.json
+@@ -0,0 +1,70 @@
++{
++  "generated_from": "meta/AgenticSWE_KnowledgeOS_Taxonomy_20260217_V2.md",
++  "generated_at": "2026-02-17",
++  "tag_count": 63,
++  "tags": [
++    "artifact/adr",
++    "artifact/adr-lite",
++    "artifact/checklist",
++    "artifact/claim",
++    "artifact/conflict-cluster",
++    "artifact/control-sheet",
++    "artifact/copy-plan",
++    "artifact/diff",
++    "artifact/eval",
++    "artifact/explanation",
++    "artifact/harness",
++    "artifact/how-to",
++    "artifact/literaturdatenbank",
++    "artifact/patch",
++    "artifact/policy",
++    "artifact/pr-report",
++    "artifact/reading-queue",
++    "artifact/reference",
++    "artifact/runbook",
++    "artifact/scorecard",
++    "artifact/search-log",
++    "artifact/template",
++    "artifact/tutorial",
++    "layer/blackboard",
++    "layer/glossar",
++    "layer/handbook",
++    "layer/library",
++    "layer/templates-harness",
++    "risk/risk-class/a",
++    "risk/risk-class/b",
++    "risk/risk-class/c",
++    "risk/stop-ask",
++    "topic/actionability",
++    "topic/aussenwirkung",
++    "topic/autonomie-leiter",
++    "topic/consistency",
++    "topic/dedupe",
++    "topic/deep-research",
++    "topic/diataxis",
++    "topic/disambiguation",
++    "topic/drive-reorganisation",
++    "topic/dry-run",
++    "topic/event-schema",
++    "topic/findability",
++    "topic/gate",
++    "topic/governance",
++    "topic/hardgates",
++    "topic/human-approval",
++    "topic/knowledge-os",
++    "topic/observability",
++    "topic/opentelemetry",
++    "topic/pipeline",
++    "topic/promotion-policy",
++    "topic/research-tier/a",
++    "topic/research-tier/b",
++    "topic/research-tier/c",
++    "topic/router",
++    "topic/run-id",
++    "topic/secrets",
++    "topic/ssot",
++    "topic/stop-condition",
++    "topic/thin-slice",
++    "topic/topologie"
++  ]
++}
+
+diff --git a/meta/AgenticSWE_KnowledgeOS_CI_Gates_Workflow_Draft_20260217_V1.yml b/meta/AgenticSWE_KnowledgeOS_CI_Gates_Workflow_Draft_20260217_V1.yml
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/meta/AgenticSWE_KnowledgeOS_CI_Gates_Workflow_Draft_20260217_V1.yml
+@@ -0,0 +1,28 @@
++# DRAFT: move to .github/workflows/ci.yml only after explicit approval (Stop-&-Ask)
++name: knowledgeos-gates
++
++on:
++  pull_request:
++    paths:
++      - "meta/**"
++      - "handbook/**"
++      - "templates-harness/**"
++      - "decisions-adr/**"
++      - "scripts/**"
++
++jobs:
++  gates:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-python@v5
++        with:
++          python-version: "3.11"
++      - name: Lint
++        run: python scripts/lint_repo.py --repo-root .
++      - name: Link check
++        run: python scripts/check_links.py --repo-root .
++      - name: Taxonomy↔Glossary mapping
++        run: python scripts/validate_taxonomy_glossary_mapping.py --glossary meta/AgenticSWE_KnowledgeOS_Glossary_20260217_V6.md --taxonomy meta/AgenticSWE_KnowledgeOS_Taxonomy_20260217_V2.md
++      - name: Frontmatter/Tag validation
++        run: python scripts/validate_frontmatter_tags.py --repo-root .
+

@@ -1,0 +1,362 @@
+diff --git a/apps/portal/src/app/chat/page.tsx b/apps/portal/src/app/chat/page.tsx
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/apps/portal/src/app/chat/page.tsx
+@@ -0,0 +1,42 @@
++'use client';
++
++import { useState } from 'react';
++
++type Msg = { role: 'user' | 'assistant'; content: string };
++
++export default function ChatPage() {
++  const [messages, setMessages] = useState<Msg[]>([]);
++  const [input, setInput] = useState('');
++
++  async function send() {
++    const userMsg: Msg = { role: 'user', content: input };
++    setMessages((m) => [...m, userMsg]);
++    setInput('');
++
++    const res = await fetch('/api/chat', {
++      method: 'POST',
++      headers: { 'content-type': 'application/json' },
++      body: JSON.stringify({ messages: [...messages, userMsg] }),
++    });
++
++    const data = await res.json();
++    setMessages((m) => [...m, { role: 'assistant', content: data.text || JSON.stringify(data) }]);
++  }
++
++  return (
++    <main>
++      <h1>Chat</h1>
++      <div style={{ display: 'grid', gap: 12, maxWidth: 900 }}>
++        <div style={{ border: '1px solid #ddd', padding: 12, minHeight: 240 }}>
++          {messages.map((m, i) => (
++            <div key={i} style={{ marginBottom: 10 }}>
++              <b>{m.role}:</b> {m.content}
++            </div>
++          ))}
++        </div>
++        <textarea value={input} onChange={(e) => setInput(e.target.value)} rows={4} />
++        <button onClick={send} disabled={!input.trim()}>Send</button>
++      </div>
++    </main>
++  );
++}
+
+diff --git a/apps/portal/src/app/api/chat/route.ts b/apps/portal/src/app/api/chat/route.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/apps/portal/src/app/api/chat/route.ts
+@@ -0,0 +1,21 @@
++import { NextRequest } from 'next/server';
++import OpenAI from 'openai';
++
++export const runtime = 'nodejs';
++
++const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
++
++export async function POST(req: NextRequest) {
++  const body = await req.json();
++  const messages = body.messages || [];
++
++  const input = messages.map((m: any) => ({ role: m.role, content: [{ type: 'text', text: m.content }] }));
++
++  const resp = await client.responses.create({
++    model: 'gpt-5',
++    input,
++  });
++
++  const text = resp.output_text || '';
++  return Response.json({ text });
++}
+
+diff --git a/apps/portal/src/app/api/pr/route.ts b/apps/portal/src/app/api/pr/route.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/apps/portal/src/app/api/pr/route.ts
+@@ -0,0 +1,28 @@
++import { NextRequest } from 'next/server';
++import { Octokit } from '@octokit/rest';
++import policy from '../../../../../../meta/AgenticSWE_KnowledgeOS_Portal_ToolPolicy_20260217_V1.json';
++import { validateWriteRequest } from '../../../lib/writeGates';
++
++export const runtime = 'nodejs';
++
++function getOctokit(): Octokit {
++  // NOTE: token creation (GitHub App Installation Token) is intentionally not implemented here.
++  // Provide GITHUB_TOKEN (fine-grained) for dev, or implement app auth later.
++  const token = process.env.GITHUB_TOKEN;
++  if (!token) throw new Error('Missing GITHUB_TOKEN');
++  return new Octokit({ auth: token });
++}
++
++export async function POST(req: NextRequest) {
++  const body = await req.json();
++  const unified_diff = body.unified_diff as string;
++  const pr_title = body.pr_title as string;
++  const pr_body = body.pr_body as string;
++
++  const gate = validateWriteRequest({ unified_diff, pr_title, pr_body }, policy.write_gates);
++  if (!gate.ok) return Response.json({ ok: false, error: gate.error }, { status: 400 });
++
++  // Stub: return what would be used to create branch/commit/PR.
++  // Implementation detail is added later with GitHub App auth + patch apply on server.
++  return Response.json({ ok: true, files: gate.files, note: 'PR creation not yet implemented in this stub.' });
++}
+
+diff --git a/apps/portal/src/lib/writeGates.ts b/apps/portal/src/lib/writeGates.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/apps/portal/src/lib/writeGates.ts
+@@ -0,0 +1,53 @@
++export type WriteGatePolicy = {
++  allowlist_paths: string[];
++  blocklist_paths: string[];
++  limits: { max_files: number; max_diff_lines: number; max_bytes: number };
++  allowed_extensions: string[];
++};
++
++export type WriteRequest = { unified_diff: string; pr_title: string; pr_body: string };
++
++function globToRegExp(glob: string): RegExp {
++  // very small glob -> regex: ** -> .*, * -> [^/]* 
++  const escaped = glob.replace(/[.+^${}()|[\]\\]/g, '\\$&');
++  const re = '^' + escaped.replace(/\*\*\//g, '(?:.*/)?').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*') + '$';
++  return new RegExp(re);
++}
++
++function extractFilesFromDiff(diff: string): string[] {
++  const files: string[] = [];
++  const re = /^\+\+\+ b\/(.+)$/gm;
++  let m;
++  while ((m = re.exec(diff)) !== null) files.push(m[1].trim());
++  return Array.from(new Set(files));
++}
++
++export function validateWriteRequest(req: WriteRequest, policy: WriteGatePolicy): { ok: true; files: string[] } | { ok: false; error: string } {
++  const bytes = Buffer.byteLength(req.unified_diff, 'utf8');
++  if (bytes > policy.limits.max_bytes) return { ok: false, error: `diff too large: ${bytes} bytes` };
++
++  const lines = req.unified_diff.split(/\r?\n/).length;
++  if (lines > policy.limits.max_diff_lines) return { ok: false, error: `diff too large: ${lines} lines` };
++
++  const files = extractFilesFromDiff(req.unified_diff);
++  if (files.length === 0) return { ok: false, error: 'no files found in diff' };
++  if (files.length > policy.limits.max_files) return { ok: false, error: `too many files: ${files.length}` };
++
++  const allow = policy.allowlist_paths.map(globToRegExp);
++  const block = policy.blocklist_paths.map(globToRegExp);
++
++  for (const f of files) {
++    if (block.some((r) => r.test(f))) return { ok: false, error: `blocked path: ${f}` };
++    if (!allow.some((r) => r.test(f))) return { ok: false, error: `not allowlisted: ${f}` };
++    const ext = f.includes('.') ? '.' + f.split('.').pop() : '';
++    if (!policy.allowed_extensions.includes(ext)) return { ok: false, error: `blocked extension: ${f}` };
++  }
++
++  // PR body must contain required sections (very lightweight check)
++  const required = ['## Summary', '## Risk Class', '## Files Touched', '## Rollback Plan'];
++  for (const r of required) {
++    if (!req.pr_body.includes(r)) return { ok: false, error: `PR body missing section: ${r}` };
++  }
++
++  return { ok: true, files };
++}
+
+diff --git a/templates-harness/AgenticSWE_KnowledgeOS_Template_PR_Report_20260217_V1.md b/templates-harness/AgenticSWE_KnowledgeOS_Template_PR_Report_20260217_V1.md
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/templates-harness/AgenticSWE_KnowledgeOS_Template_PR_Report_20260217_V1.md
+@@ -0,0 +1,43 @@
++---
++project: AgenticSWE_KnowledgeOS
++doc_type: template
++version: V1
++date: 2026-02-17
++status: draft
++audience: [human, llm]
++intent: "Template für PR Report (Pull Request Report, standardisierter PR-Body) inkl. Risk Class und Rollback."
++tags:
++  - layer/templates-harness
++  - artifact/pr-report
++  - topic/governance
++  - topic/gate
++  - topic/hardgates
++---
++
++# PR Report (Template) (V1)
++
++## Summary
++- What changed?
++- Why?
++
++## Risk Class
++- risk_class: A | B | C
++- rationale:
++
++## Files Touched
++- list all files and why they are touched
++
++## Gates / Checks
++- [ ] Lint
++- [ ] Link-Check
++- [ ] Taxonomy↔Glossary validation
++- [ ] Frontmatter/Tag validation
++
++## Evidence
++- commands executed + outputs (short)
++
++## Rollback Plan
++- how to revert safely (branch revert / PR revert)
++
++## Notes
++- open questions / follow-ups
+
+diff --git a/templates-harness/AgenticSWE_KnowledgeOS_Schema_PR_Report_20260217_V1.json b/templates-harness/AgenticSWE_KnowledgeOS_Schema_PR_Report_20260217_V1.json
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/templates-harness/AgenticSWE_KnowledgeOS_Schema_PR_Report_20260217_V1.json
+@@ -0,0 +1,52 @@
++{
++  "$schema": "https://json-schema.org/draft/2020-12/schema",
++  "title": "AgenticSWE_KnowledgeOS PR Report",
++  "type": "object",
++  "required": [
++    "summary",
++    "risk_class",
++    "files_touched",
++    "rollback_plan"
++  ],
++  "properties": {
++    "summary": {
++      "type": "string",
++      "minLength": 5
++    },
++    "risk_class": {
++      "type": "string",
++      "enum": [
++        "A",
++        "B",
++        "C"
++      ]
++    },
++    "files_touched": {
++      "type": "array",
++      "minItems": 1,
++      "items": {
++        "type": "string"
++      }
++    },
++    "checks": {
++      "type": "array",
++      "items": {
++        "type": "string"
++      }
++    },
++    "evidence": {
++      "type": "array",
++      "items": {
++        "type": "string"
++      }
++    },
++    "rollback_plan": {
++      "type": "string",
++      "minLength": 5
++    },
++    "notes": {
++      "type": "string"
++    }
++  },
++  "additionalProperties": false
++}
+
+diff --git a/meta/AgenticSWE_KnowledgeOS_Portal_ChatPromptContract_20260217_V1.md b/meta/AgenticSWE_KnowledgeOS_Portal_ChatPromptContract_20260217_V1.md
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/meta/AgenticSWE_KnowledgeOS_Portal_ChatPromptContract_20260217_V1.md
+@@ -0,0 +1,35 @@
++---
++project: AgenticSWE_KnowledgeOS
++doc_type: policy
++version: V1
++date: 2026-02-17
++status: draft
++audience: [human, llm]
++intent: "Prompt-Contract für Portal-Chat: Read-only by default, Write nur via PR mit Write-Gates."
++tags:
++  - layer/handbook
++  - artifact/policy
++  - topic/governance
++  - topic/ssot
++  - topic/gate
++  - topic/hardgates
++---
++
++# Portal Chat Prompt-Contract (V1)
++
++## Prinzipien
++- **SSOT:** Repo-Dateien sind Wahrheit.
++- **Read-only Default:** Chat darf Inhalte erklären/finden, aber nicht direkt schreiben.
++- **Write nur via PR:** Wenn Schreiben nötig ist, erzeugt Chat *Patch/Diff* + PR-Report.
++
++## Tool-Policy (Tool policy, enforced rules)
++- Lesen: `file_search` / Repo-Read APIs.
++- Schreiben: nur `/api/pr` mit:
++  - Allowlist-Pfaden
++  - Blocklist
++  - Diff/Size Limits
++  - PR-Report Pflicht
++
++## Output-Kontrakt
++- Immer: Risk Class, Files touched, Gates to run, Rollback.
++- Bei Risiko (z. B. `.github/workflows/**`): Stop-&-Ask.
+
+diff --git a/meta/AgenticSWE_KnowledgeOS_Portal_ToolPolicy_20260217_V1.json b/meta/AgenticSWE_KnowledgeOS_Portal_ToolPolicy_20260217_V1.json
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/meta/AgenticSWE_KnowledgeOS_Portal_ToolPolicy_20260217_V1.json
+@@ -0,0 +1,32 @@
++{
++  "name": "AgenticSWE_KnowledgeOS_Portal_ToolPolicy",
++  "version": "20260217_V1",
++  "write_gates": {
++    "allowlist_paths": [
++      "meta/**",
++      "handbook/**",
++      "templates-harness/**",
++      "decisions-adr/**"
++    ],
++    "blocklist_paths": [
++      ".github/workflows/**",
++      "infra/**",
++      "secrets/**",
++      "**/.env*",
++      "**/.env.*"
++    ],
++    "limits": {
++      "max_files": 10,
++      "max_diff_lines": 600,
++      "max_bytes": 200000
++    },
++    "allowed_extensions": [
++      ".md",
++      ".json",
++      ".yml",
++      ".yaml"
++    ]
++  },
++  "pr_report_template": "templates-harness/AgenticSWE_KnowledgeOS_Template_PR_Report_20260217_V1.md",
++  "pr_report_schema": "templates-harness/AgenticSWE_KnowledgeOS_Schema_PR_Report_20260217_V1.json"
++}
+

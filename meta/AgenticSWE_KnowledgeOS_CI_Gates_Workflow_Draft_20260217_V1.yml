@@ -1,0 +1,28 @@
+# DRAFT: move to .github/workflows/ci.yml only after explicit approval (Stop-&-Ask)
+name: knowledgeos-gates
+
+on:
+  pull_request:
+    paths:
+      - "meta/**"
+      - "handbook/**"
+      - "templates-harness/**"
+      - "decisions-adr/**"
+      - "scripts/**"
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Lint
+        run: python scripts/lint_repo.py --repo-root .
+      - name: Link check
+        run: python scripts/check_links.py --repo-root .
+      - name: Taxonomy↔Glossary mapping
+        run: python scripts/validate_taxonomy_glossary_mapping.py --glossary meta/AgenticSWE_KnowledgeOS_Glossary_20260217_V6.md --taxonomy meta/AgenticSWE_KnowledgeOS_Taxonomy_20260217_V2.md
+      - name: Frontmatter/Tag validation
+        run: python scripts/validate_frontmatter_tags.py --repo-root .

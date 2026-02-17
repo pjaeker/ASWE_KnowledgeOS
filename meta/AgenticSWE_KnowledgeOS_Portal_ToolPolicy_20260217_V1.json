@@ -1,0 +1,32 @@
+{
+  "name": "AgenticSWE_KnowledgeOS_Portal_ToolPolicy",
+  "version": "20260217_V1",
+  "write_gates": {
+    "allowlist_paths": [
+      "meta/**",
+      "handbook/**",
+      "templates-harness/**",
+      "decisions-adr/**"
+    ],
+    "blocklist_paths": [
+      ".github/workflows/**",
+      "infra/**",
+      "secrets/**",
+      "**/.env*",
+      "**/.env.*"
+    ],
+    "limits": {
+      "max_files": 10,
+      "max_diff_lines": 600,
+      "max_bytes": 200000
+    },
+    "allowed_extensions": [
+      ".md",
+      ".json",
+      ".yml",
+      ".yaml"
+    ]
+  },
+  "pr_report_template": "templates-harness/AgenticSWE_KnowledgeOS_Template_PR_Report_20260217_V1.md",
+  "pr_report_schema": "templates-harness/AgenticSWE_KnowledgeOS_Schema_PR_Report_20260217_V1.json"
+}

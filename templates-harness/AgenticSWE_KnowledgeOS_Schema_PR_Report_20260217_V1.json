@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgenticSWE_KnowledgeOS PR Report",
+  "type": "object",
+  "required": [
+    "summary",
+    "risk_class",
+    "files_touched",
+    "rollback_plan"
+  ],
+  "properties": {
+    "summary": {
+      "type": "string",
+      "minLength": 5
+    },
+    "risk_class": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    "files_touched": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "rollback_plan": {
+      "type": "string",
+      "minLength": 5
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

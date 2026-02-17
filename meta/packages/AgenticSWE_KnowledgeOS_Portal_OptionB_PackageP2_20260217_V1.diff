@@ -1,0 +1,242 @@
+diff --git a/apps/portal/package.json b/apps/portal/package.json
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/apps/portal/package.json
+@@ -0,0 +1,26 @@
++{
++  "name": "@agenticswe/portal",
++  "private": true,
++  "version": "0.0.1",
++  "scripts": {
++    "dev": "next dev",
++    "build": "next build",
++    "start": "next start",
++    "lint": "next lint"
++  },
++  "dependencies": {
++    "next": "14.2.0",
++    "react": "18.3.1",
++    "react-dom": "18.3.1",
++    "@keystatic/core": "^0.5.0",
++    "@keystatic/next": "^0.5.0",
++    "openai": "^4.0.0",
++    "@octokit/rest": "^21.0.0"
++  },
++  "devDependencies": {
++    "typescript": "^5.5.0",
++    "@types/node": "^20.11.0",
++    "@types/react": "^18.2.0",
++    "@types/react-dom": "^18.2.0"
++  }
++}
+
+diff --git a/apps/portal/next.config.js b/apps/portal/next.config.js
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/apps/portal/next.config.js
+@@ -0,0 +1,3 @@
++/** @type {import('next').NextConfig} */
++const nextConfig = {};
++module.exports = nextConfig;
+
+diff --git a/apps/portal/tsconfig.json b/apps/portal/tsconfig.json
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/apps/portal/tsconfig.json
+@@ -0,0 +1,29 @@
++{
++  "compilerOptions": {
++    "target": "ES2022",
++    "lib": [
++      "dom",
++      "dom.iterable",
++      "esnext"
++    ],
++    "allowJs": true,
++    "skipLibCheck": true,
++    "strict": true,
++    "noEmit": true,
++    "esModuleInterop": true,
++    "module": "esnext",
++    "moduleResolution": "bundler",
++    "resolveJsonModule": true,
++    "isolatedModules": true,
++    "jsx": "preserve",
++    "incremental": true
++  },
++  "include": [
++    "next-env.d.ts",
++    "**/*.ts",
++    "**/*.tsx"
++  ],
++  "exclude": [
++    "node_modules"
++  ]
++}
+
+diff --git a/apps/portal/.env.example b/apps/portal/.env.example
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/apps/portal/.env.example
+@@ -0,0 +1,12 @@
++# OpenAI
++OPENAI_API_KEY=...
++
++# Optional: for semantic retrieval (vector store)
++OPENAI_VECTOR_STORE_ID=
++
++# GitHub App (Installation Token flow handled server-side)
++GITHUB_APP_ID=
++GITHUB_APP_INSTALLATION_ID=
++GITHUB_APP_PRIVATE_KEY_BASE64=
++GITHUB_REPO_OWNER=
++GITHUB_REPO_NAME=
+
+diff --git a/apps/portal/keystatic.config.ts b/apps/portal/keystatic.config.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/apps/portal/keystatic.config.ts
+@@ -0,0 +1,91 @@
++import { config, fields, collection, singleton } from '@keystatic/core';
++
++const layerOptions = [
++  { label: 'Glossar', value: 'layer/glossar' },
++  { label: 'Handbook', value: 'layer/handbook' },
++  { label: 'Templates & Harness', value: 'layer/templates-harness' },
++  { label: 'Blackboard', value: 'layer/blackboard' },
++  { label: 'Library', value: 'layer/library' },
++];
++
++const artifactOptions = [
++  { label: 'Runbook', value: 'artifact/runbook' },
++  { label: 'ADR', value: 'artifact/adr' },
++  { label: 'Reference', value: 'artifact/reference' },
++  { label: 'Policy', value: 'artifact/policy' },
++  { label: 'How-to', value: 'artifact/how-to' },
++  { label: 'Template', value: 'artifact/template' },
++  { label: 'PR Report', value: 'artifact/pr-report' },
++];
++
++const tagField = fields.array(fields.text({ label: 'tags (validated by gates)' }), {
++  label: 'Tags',
++  itemLabel: (i) => i.value,
++});
++
++const baseFrontmatter = {
++  project: fields.text({ label: 'project', validation: { isRequired: true } }),
++  doc_type: fields.text({ label: 'doc_type', validation: { isRequired: true } }),
++  version: fields.text({ label: 'version', validation: { isRequired: true } }),
++  date: fields.text({ label: 'date', validation: { isRequired: true } }),
++  status: fields.select({
++    label: 'status',
++    options: [
++      { label: 'draft', value: 'draft' },
++      { label: 'stable', value: 'stable' },
++      { label: 'deprecated', value: 'deprecated' },
++    ],
++    defaultValue: 'draft',
++  }),
++  intent: fields.text({ label: 'intent', multiline: true }),
++  tags: tagField,
++};
++
++export default config({
++  storage: {
++    kind: 'github',
++    repo: process.env.KEYSTATIC_GITHUB_REPO || 'OWNER/REPO',
++  },
++  singletons: {
++    glossary_latest: singleton({
++      label: 'Glossar (latest)',
++      path: 'meta/AgenticSWE_KnowledgeOS_Glossary_20260217_V6',
++      schema: {
++        ...baseFrontmatter,
++        content: fields.markdown({ label: 'content' }),
++      },
++      format: { contentField: 'content' },
++    }),
++    taxonomy_latest: singleton({
++      label: 'Taxonomie (latest)',
++      path: 'meta/AgenticSWE_KnowledgeOS_Taxonomy_20260217_V2',
++      schema: {
++        ...baseFrontmatter,
++        content: fields.markdown({ label: 'content' }),
++      },
++      format: { contentField: 'content' },
++    }),
++  },
++  collections: {
++    adrs: collection({
++      label: 'ADRs',
++      path: 'decisions-adr/*',
++      schema: {
++        ...baseFrontmatter,
++        title: fields.text({ label: 'title', validation: { isRequired: true } }),
++        content: fields.markdown({ label: 'content' }),
++      },
++      format: { contentField: 'content' },
++    }),
++    runbooks: collection({
++      label: 'Runbooks',
++      path: 'handbook/runbooks/*',
++      schema: {
++        ...baseFrontmatter,
++        title: fields.text({ label: 'title', validation: { isRequired: true } }),
++        content: fields.markdown({ label: 'content' }),
++      },
++      format: { contentField: 'content' },
++    }),
++  },
++});
+
+diff --git a/apps/portal/src/app/layout.tsx b/apps/portal/src/app/layout.tsx
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/apps/portal/src/app/layout.tsx
+@@ -0,0 +1,14 @@
++export default function RootLayout({ children }: { children: React.ReactNode }) {
++  return (
++    <html lang="de">
++      <body style={{ fontFamily: "system-ui, sans-serif", margin: 0 }}>
++        <div style={{ padding: 16, borderBottom: "1px solid #ddd", display: "flex", gap: 12 }}>
++          <a href="/">Home</a>
++          <a href="/chat">Chat</a>
++          <a href="/keystatic">Keystatic</a>
++        </div>
++        <div style={{ padding: 16 }}>{children}</div>
++      </body>
++    </html>
++  );
++}
+
+diff --git a/apps/portal/src/app/page.tsx b/apps/portal/src/app/page.tsx
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/apps/portal/src/app/page.tsx
+@@ -0,0 +1,8 @@
++export default function Page() {
++  return (
++    <main>
++      <h1>AgenticSWE Knowledge-OS Portal</h1>
++      <p>Keystatic: Inhalte als PR bearbeiten. Chat: read-only Assistenz + optional PR-Write.</p>
++    </main>
++  );
++}
+
+diff --git a/apps/portal/src/app/keystatic/[[...params]]/page.tsx b/apps/portal/src/app/keystatic/[[...params]]/page.tsx
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/apps/portal/src/app/keystatic/[[...params]]/page.tsx
+@@ -0,0 +1,3 @@
++import KeystaticApp from '@keystatic/next/app';
++
++export default KeystaticApp;
+
