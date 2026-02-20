@@ -2,5 +2,11 @@
   "security.workspace.trust.enabled": true,
   "security.workspace.trust.untrustedFiles": "newWindow",
   "terminal.integrated.scrollback": 5000,
-  "files.eol": "\n"
+  "files.eol": "\n",
+  "snyk.advanced.autoSelectOrganization": true,
+  "[markdown]": {
+  },
+  "frontMatter.framework.id": "other",
+  "frontMatter.preview.host": "http://localhost:1313",
+  "frontMatter.content.publicFolder": ""
 }
