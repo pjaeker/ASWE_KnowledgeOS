@@ -1,0 +1,20 @@
+{
+  "project": "AgenticSWE_KnowledgeOS",
+  "doc_type": "repo-manifest",
+  "version": "V1",
+  "date": "2026-02-24",
+  "status": "draft",
+  "basis_ref": "<branch|tag|commit-sha>",
+  "generated_by": "<human|codex|script>",
+  "source": "git ls-files",
+  "redactions": [
+    ".env*",
+    "secrets/**"
+  ],
+  "file_count": 0,
+  "files": [],
+  "notes": [
+    "files[] contains tracked paths relative to repo root",
+    "If a tracked path matches a redaction pattern, replace it with "<REDACTED_PATH>" and add a TODO in the snapshot"
+  ]
+}
