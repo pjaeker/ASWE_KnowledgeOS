@@ -1,0 +1,21 @@
+{
+  // Toleranter Start: vermeidet Repo-weite Noise-Explosion.
+  // Strenger machen in Phase 2/3.
+
+  // First line in file should be a top-level heading (Frontmatter ist normal)
+  "MD041": false,
+
+  // Line length (Legacy + Markdown-Wrap-Stile variieren stark)
+  "MD013": false,
+
+  // Inline HTML (manchmal sinnvoll für Docs)
+  "MD033": false,
+
+  "ignore": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.next/**"
+  ]
+}

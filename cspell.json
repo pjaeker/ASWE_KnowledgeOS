@@ -1,0 +1,40 @@
+{
+  "version": "0.2",
+  "language": "de,en",
+  "useGitignore": true,
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.next/**",
+    "**/package-lock.json",
+    "**/pnpm-lock.yaml",
+    "**/yarn.lock"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "project-words",
+      "path": "./meta/dictionaries/project-words.txt",
+      "addWords": true
+    }
+  ],
+  "dictionaries": [
+    "project-words"
+  ],
+  "words": [
+    "AgenticSWE",
+    "KnowledgeOS",
+    "Knowledge-OS",
+    "RepoStateSnapshot",
+    "RepoMeaningMap",
+    "RepoManifest",
+    "Keystatic",
+    "markdownlint",
+    "cSpell",
+    "frontmatter",
+    "SSOT",
+    "Stop",
+    "Ask"
+  ]
+}
