@@ -38,23 +38,28 @@ tags:
 ## B) Hard Rules (nicht verhandelbar)
 
 1) **No-Secrets (no secrets, keine Keys):**
+
 - Gib niemals Tokens/Keys/Secrets aus.
 - Ignoriere und lies nicht: `**/.env*`, `**/secrets/**`, `**/.git/**`, `**/node_modules/**`, `**/dist/**`.
 - Wenn du beim Scannen verdächtige Strings siehst: **redact** als `<REDACTED>` und setze ein TODO.
 
-2) **SSOT & Normen:**
+1) **SSOT & Normen:**
+
 - Glossar ist normativ; Taxonomie-Tags nur aus Allowlist.
 - Wenn ein Tag/Regel in Docs widersprüchlich ist: **markiere Konflikt** (TODO) statt zu raten.
 
-3) **Small diff (thin slice, kleinster Schnitt):**
+1) **Small diff (thin slice, kleinster Schnitt):**
+
 - Ändere nur Dateien in `TARGET_DIR` (plus optional `meta/templates/` falls Templates fehlen).
 - Kein Refactor, keine Umformatierung über viele Dateien.
 
-4) **Write via PR (pull request, Änderungsvorschlag):**
+1) **Write via PR (pull request, Änderungsvorschlag):**
+
 - Arbeite auf einem Branch `chat/<run_id>/repo-state`.
 - Erzeuge einen PR mit PR-Report (siehe Abschnitt F).
 
-5) **Evidence (evidence, Nachweis):**
+1) **Evidence (evidence, Nachweis):**
+
 - Führe verfügbare lokale Gates aus (markdownlint/cSpell) oder dokumentiere exakt, warum nicht.
 
 ---
@@ -76,6 +81,7 @@ tags:
 ## D) Task — APPLY (write)
 
 ### D1) RepoStateSnapshot erzeugen/aktualisieren
+
 - Wenn kein Snapshot existiert: erstelle `..._TODAY_V1.md`.
 - Wenn existiert: erstelle `..._TODAY_V(next+1).md` und setze `previous_snapshot` auf die letzte Version.
 - Nutze das Snapshot-Template als Struktur; fülle nur:
@@ -87,11 +93,13 @@ tags:
   - TODOs
 
 ### D2) RepoMeaningMap erzeugen/aktualisieren
+
 - Wenn keine MeaningMap existiert: erstelle `..._TODAY_V1.md`.
 - Wenn existiert: erstelle `..._TODAY_V(next+1).md` und referenziere `last_snapshot_ref`.
 - Nutze das MeaningMap-Template; fülle nur Schlüsselartefakte (max ~15).
 
 ### D3) Konsistenzregeln (minimum)
+
 - Frontmatter:
   - `project: AgenticSWE_KnowledgeOS`
   - `version: Vx` muss zum Dateinamen passen
@@ -108,6 +116,7 @@ Versuche (sofern Tooling vorhanden):
 - `npx cspell lint .`
 
 Wenn nicht möglich:
+
 - schreibe in beide Dateien unter „Gates & Checks“: `not_executed` + Grund.
 
 ---
@@ -115,12 +124,15 @@ Wenn nicht möglich:
 ## F) Task — DELIVER (PR)
 
 1. Commit Message:
+
 - `chat: repo state snapshot + meaning map (run_id=<...>)`
 
-2. PR Title:
+1. PR Title:
+
 - `Repo state snapshot + meaning map (run_id=<...>)`
 
-3. PR Body:
+1. PR Body:
+
 - Nutze dieses PR-Report Template:
 
 ```md
@@ -152,6 +164,7 @@ Wenn nicht möglich:
 ## G) Stop Conditions (Stop-&-Ask)
 
 Stoppe und liefere **nur** einen Plan, wenn:
+
 - du außerhalb `TARGET_DIR` schreiben müsstest,
 - du `.github/workflows/**` anfassen müsstest,
 - du Secrets vermutest,

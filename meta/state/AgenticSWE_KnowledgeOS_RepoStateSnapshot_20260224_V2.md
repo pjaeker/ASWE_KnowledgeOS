@@ -123,6 +123,7 @@ tags:
   - `decisions-adr/AgenticSWE_KnowledgeOS_ADR_Portal_OptionB_20260217_V1.md` — status: `draft`.
 
 Known inconsistencies (falls vorhanden):
+
 - `handbook/runbooks/AgenticSWE_KnowledgeOS_Portal_OptionB_Runbook_20260217_V2.md` nutzt `topic/pr`, das nicht in der aktuellen Taxonomie-Allowlist steht.
 - Mehrere Legacy-Dateien verletzen Frontmatter-Hardgate (fehlendes `layer/*` oder `artifact/*`, teils fehlendes Frontmatter).
 

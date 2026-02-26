@@ -18,6 +18,7 @@ tags:
 ---
 
 # Codex Prompt Template — RepoStateSnapshot + RepoMeaningMap (V3)
+>
 > **Use case:** Codex hat Repo-Zugriff und erzeugt einen **sauberen, versionierten Status** + **Semantik-Landkarte**, damit Updates im Chat korrekt sind, auch wenn nicht alle Dateien im Chat vorliegen.
 
 ---
@@ -37,23 +38,28 @@ tags:
 ## B) Hard Rules (nicht verhandelbar)
 
 1) **No-Secrets (no secrets, keine Keys):**
+
 - Gib niemals Tokens/Keys/Secrets aus.
 - Ignoriere und lies nicht: `**/.env*`, `**/secrets/**`, `**/.git/**`, `**/node_modules/**`, `**/dist/**`.
 - Wenn du beim Scannen verdächtige Strings siehst: **redact** als `<REDACTED>` und setze ein TODO.
 
-2) **SSOT & Normen:**
+1) **SSOT & Normen:**
+
 - Glossar ist normativ; Taxonomie-Tags nur aus Allowlist.
 - Wenn ein Tag/Regel in Docs widersprüchlich ist: **markiere Konflikt** (TODO) statt zu raten.
 
-3) **Small diff (thin slice, kleinster Schnitt):**
+1) **Small diff (thin slice, kleinster Schnitt):**
+
 - Ändere nur Dateien in `TARGET_DIR` (plus optional `meta/templates/` falls Templates fehlen).
 - Kein Refactor, keine Umformatierung über viele Dateien.
 
-4) **Write via PR (pull request, Änderungsvorschlag):**
+1) **Write via PR (pull request, Änderungsvorschlag):**
+
 - Arbeite auf einem Branch `chat/<run_id>/repo-state`.
 - Erzeuge einen PR mit PR-Report (siehe Abschnitt F).
 
-5) **Evidence (evidence, Nachweis):**
+1) **Evidence (evidence, Nachweis):**
+
 - Führe verfügbare lokale Gates aus (markdownlint/cSpell) oder dokumentiere exakt, warum nicht.
 
 ---
@@ -75,6 +81,7 @@ tags:
 ## D) Task — APPLY (write)
 
 ### D1) RepoStateSnapshot erzeugen/aktualisieren
+
 - Wenn kein Snapshot existiert: erstelle `..._TODAY_V1.md`.
 - Wenn existiert: erstelle `..._TODAY_V(next+1).md` und setze `previous_snapshot` auf die letzte Version.
 - Nutze das Snapshot-Template als Struktur; fülle nur:
@@ -86,11 +93,13 @@ tags:
   - TODOs
 
 ### D2) RepoMeaningMap erzeugen/aktualisieren
+
 - Wenn keine MeaningMap existiert: erstelle `..._TODAY_V1.md`.
 - Wenn existiert: erstelle `..._TODAY_V(next+1).md` und referenziere `last_snapshot_ref`.
 - Nutze das MeaningMap-Template; fülle nur Schlüsselartefakte (max ~15).
 
 ### D3) Konsistenzregeln (minimum)
+
 - Frontmatter:
   - `project: AgenticSWE_KnowledgeOS`
   - `version: Vx` muss zum Dateinamen passen
@@ -104,17 +113,23 @@ tags:
 Ziel: **Best-effort Evidence (evidence, Nachweis)** ohne unnötige Hard-Fails.
 
 ### E1) Prefer local scripts (falls vorhanden)
+
 Wenn `package.json` Scripts existieren, bevorzuge:
+
 - `npm run lint:md` (oder ähnlicher Scriptname)
 - `npm run spell` (oder ähnlicher Scriptname)
 
 ### E2) Fallback via npx (nur wenn Registry erreichbar)
+
 Versuche (sofern Tooling/Registry erreichbar):
+
 - `npx markdownlint-cli2 "**/*.md"`
 - `npx cspell lint .`
 
 ### E3) Registry/Environment Restriction Handling
+
 Wenn ein Gate scheitert mit **npm 403 Forbidden** (registry restricted):
+
 - markiere das Gate als:
   - `not_executed (npm 403 registry restricted)`
 - **nicht** als inhaltlichen Fail interpretieren.
@@ -122,28 +137,34 @@ Wenn ein Gate scheitert mit **npm 403 Forbidden** (registry restricted):
   - `TODO: enable editor gates OR install local devDependencies (no-npx) OR configure allowed registry/mirror`
 
 ### E4) Editor Gates (VS Code) als akzeptables Ersatz-Evidence
+
 Wenn im Repo bereits Editor-Gates konfiguriert sind (z. B. `.vscode/`, `.markdownlint.jsonc`, `cspell.json`):
+
 - dokumentiere in „Gates & Checks“:
   - `editor_gates: required` (falls CLI nicht läuft)
   - optional: `editor_gates: available` (falls konfig vorhanden)
 Hinweis: Kein Screenshot/GUI-Export in PR nötig, aber im Text klar markieren, dass Evidence über Editor erfolgt.
 
 ### E5) Wenn VERIFY insgesamt nicht möglich
+
 Wenn weder lokale Scripts noch npx noch Editor-Gates verfügbar sind:
+
 - schreibe in beide Dateien unter „Gates & Checks“:
   - `not_executed` + konkreter Grund (z. B. `tooling not configured yet`)
   - und ein TODO zur Aktivierung der Gates.
 
-
 ## F) Task — DELIVER (PR)
 
 1. Commit Message:
+
 - `chat: repo state snapshot + meaning map (run_id=<...>)`
 
-2. PR Title:
+1. PR Title:
+
 - `Repo state snapshot + meaning map (run_id=<...>)`
 
-3. PR Body:
+1. PR Body:
+
 - Nutze dieses PR-Report Template:
 
 ```md
@@ -175,6 +196,7 @@ Wenn weder lokale Scripts noch npx noch Editor-Gates verfügbar sind:
 ## G) Stop Conditions (Stop-&-Ask)
 
 Stoppe und liefere **nur** einen Plan, wenn:
+
 - du außerhalb `TARGET_DIR` schreiben müsstest,
 - du `.github/workflows/**` anfassen müsstest,
 - du Secrets vermutest,
