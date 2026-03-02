@@ -81,15 +81,15 @@ Legende: ✅ möglich/typisch · ⚠️ abhängig von App/Region/Rollout/Policy 
 
 ## Quellen (primaer)
 
-- OpenAI Help Center: Connectors/App Verfuegbarkeit nach Plan: https://help.openai.com/en/articles/11487775/
-- OpenAI Help Center: Apps mit Sync: https://help.openai.com/en/articles/10847137-chatgpt-synced-connectors-faq
-- OpenAI Help Center: Release Notes (Rollouts/Region): https://help.openai.com/en/articles/6825453-chatgpt-release-notes
-- OpenAI Help Center: Developer mode + MCP apps/connectors (beta): https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt-beta
-- OpenAI API Pricing (File Search): https://openai.com/api/pricing/
-- OpenAI Business data (no-train default fuer Business/API): https://openai.com/business-data
-- OpenAI Help Center: Data Controls (Plus/Pro/Free default train-on, opt-out): https://help.openai.com/en/articles/8983130-what-if-i-want-to-keep-my-history-on-but-disable-model-training
-- GitHub Docs: Copilot Instructions: https://docs.github.com/copilot/customizing-copilot/adding-custom-instructions-for-github-copilot
-- GitHub REST API: Create pull request: https://docs.github.com/en/rest/pulls/pulls#create-a-pull-request
-- GitHub Apps Auth: https://docs.github.com/apps/building-github-apps/authenticating-with-github-apps
-- GitHub Docs: Branch protection (Require PR + checks): https://docs.github.com/articles/enabling-required-reviews-for-pull-requests
-- GitHub Docs: Secret scanning + push protection: https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection
+- OpenAI Help Center: Connectors/App Verfuegbarkeit nach Plan: <https://help.openai.com/en/articles/11487775/>
+- OpenAI Help Center: Apps mit Sync: <https://help.openai.com/en/articles/10847137-chatgpt-synced-connectors-faq>
+- OpenAI Help Center: Release Notes (Rollouts/Region): <https://help.openai.com/en/articles/6825453-chatgpt-release-notes>
+- OpenAI Help Center: Developer mode + MCP apps/connectors (beta): <https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt-beta>
+- OpenAI API Pricing (File Search): <https://openai.com/api/pricing/>
+- OpenAI Business data (no-train default fuer Business/API): <https://openai.com/business-data>
+- OpenAI Help Center: Data Controls (Plus/Pro/Free default train-on, opt-out): <https://help.openai.com/en/articles/8983130-what-if-i-want-to-keep-my-history-on-but-disable-model-training>
+- GitHub Docs: Copilot Instructions: <https://docs.github.com/copilot/customizing-copilot/adding-custom-instructions-for-github-copilot>
+- GitHub REST API: Create pull request: <https://docs.github.com/en/rest/pulls/pulls#create-a-pull-request>
+- GitHub Apps Auth: <https://docs.github.com/apps/building-github-apps/authenticating-with-github-apps>
+- GitHub Docs: Branch protection (Require PR + checks): <https://docs.github.com/articles/enabling-required-reviews-for-pull-requests>
+- GitHub Docs: Secret scanning + push protection: <https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection>
