@@ -146,7 +146,7 @@ Serverseitig erzwingen:
 
 ## Evidence (External)
 
-- Connectors Plan-Matrix + Nutzung: https://help.openai.com/en/articles/11487775-connectors-in-chatgpt
-- GitHub Connector: https://help.openai.com/en/articles/11145903-connecting-github-to-chatgpt-deep-research-to-chatgpt-deep-research
-- Synced Connectors FAQ: https://help.openai.com/en/articles/10847137-chatgpt-synced-connectors-faq
-- Developer mode + MCP: https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt-beta
+- Connectors Plan-Matrix + Nutzung: <https://help.openai.com/en/articles/11487775-connectors-in-chatgpt>
+- GitHub Connector: <https://help.openai.com/en/articles/11145903-connecting-github-to-chatgpt-deep-research-to-chatgpt-deep-research>
+- Synced Connectors FAQ: <https://help.openai.com/en/articles/10847137-chatgpt-synced-connectors-faq>
+- Developer mode + MCP: <https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt-beta>
