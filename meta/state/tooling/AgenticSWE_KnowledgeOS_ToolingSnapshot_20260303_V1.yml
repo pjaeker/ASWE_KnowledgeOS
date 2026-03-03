@@ -1,0 +1,43 @@
+snapshot_id: tooling-20260303-V1
+date: 2026-03-03
+host:
+  os: "Windows (unknown)"
+  arch: "unknown"
+repo:
+  path: "G:\\Program Files (x86)\\GitHub\\Repositories\\ASWE_KnowledgeOS"
+  origin: "https://github.com/pjaeker/ASWE_KnowledgeOS.git"
+  commit: "f9c5c627e5894f505ce0bfde4a97db144a02dad6"
+vscode:
+  version: "NONE"
+  cli_path: "NONE"
+  extensions_total: 0
+  extensions_truncated: false
+  extensions_digest: "NONE"
+  extensions:
+    - id: "NONE"
+      version: "NONE"
+git:
+  version: "2.52.0.windows.1"
+  path: "C:\\Program Files\\Git\\cmd\\git.exe"
+gh:
+  version: "2.87.3"
+  path: "C:\\Program Files\\GitHub CLI\\gh.exe"
+node:
+  version: "24.13.0"
+  path: "C:\\Program Files\\nodejs\\node.exe"
+npm:
+  version: "11.6.2"
+  path: "C:\\Program Files\\nodejs\\npm.ps1"
+python:
+  version: "3.14.3"
+  path: "C:\\Python314\\python.exe"
+  packages_digest: "NONE"
+codex:
+  config:
+    sandbox_mode: "NONE"
+    approval_policy: "NONE"
+notes:
+  - "Host info via CIM not available."
+  - "VS Code CLI not found (code). Install VS Code or add its bin to PATH."
+  - "pip freeze returned empty or failed; digest not computed."
+  - "codex.toml not found (optional)."

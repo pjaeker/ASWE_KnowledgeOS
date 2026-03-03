@@ -51,7 +51,6 @@ tags:
 5) Create PR report with rollback plan and SSOT references.
 ```
 
-
 ## Hinweise
 
 - Dieser Entry verweist auf die **bestehenden Dateinamen** (in-place aktualisiert), nicht auf neue Tagesversionen.
