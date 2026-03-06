@@ -1,0 +1,23 @@
+{
+  "allowedRepos": [
+    "pjaeker/ASWE_KnowledgeOS"
+  ],
+  "allowedPaths": [
+    "handbook/",
+    "meta/",
+    "decisions-adr/",
+    "templates-harness/"
+  ],
+  "blockedPaths": [
+    ".github/workflows/",
+    "infra/",
+    "secrets/",
+    ".env",
+    ".env.",
+    "package-lock.json"
+  ],
+  "maxFiles": 10,
+  "maxDiffLines": 3000,
+  "defaultBaseBranch": "main",
+  "defaultDraftPr": true
+}
