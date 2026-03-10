@@ -6,7 +6,9 @@
     "handbook/",
     "meta/",
     "decisions-adr/",
-    "templates-harness/"
+    "templates-harness/",
+    "blackboard/",
+    ".github/prompts/"
   ],
   "blockedPaths": [
     ".github/workflows/",

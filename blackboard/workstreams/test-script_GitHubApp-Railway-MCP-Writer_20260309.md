@@ -68,3 +68,46 @@ Invoke-RestMethod `
   -Uri "https://asweknowledgeos-production.up.railway.app/mcp" `
   -Headers $headers `
   -Body $body
+
+## Verifying Committ-File
+
+$body = @{
+  tool = "commit_files"
+  args = @{
+    repo = "pjaeker/ASWE_KnowledgeOS"
+    branch = $branchName
+    message = "docs: add MCP smoke test"
+    files = @(
+      @{
+        path = "meta/mcp-smoke-test.md"
+        content = "# MCP Smoke Test`n`nCreated from Railway MCP writer.`n"
+      }
+    )
+  }
+} | ConvertTo-Json -Depth 8
+
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "https://asweknowledgeos-production.up.railway.app/mcp" `
+  -Headers $headers `
+  -Body $body
+
+## Verifying Draft-PR
+
+$body = @{
+  tool = "open_pr"
+  args = @{
+    repo = "pjaeker/ASWE_KnowledgeOS"
+    base = "main"
+    head = $branchName
+    title = "docs: MCP smoke test"
+    body = "Draft PR created from Railway MCP writer."
+    draft = $true
+  }
+} | ConvertTo-Json -Depth 6
+
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "https://asweknowledgeos-production.up.railway.app/mcp" `
+  -Headers $headers `
+  -Body $body
