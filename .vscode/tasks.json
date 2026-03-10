@@ -76,6 +76,85 @@
         "panel": "shared",
         "showReuseMessage": false
       }
+    },
+    {
+      "label": "ASWE: Bootstrap (Read Entry + Status + WS)",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "scripts/aswe_bootstrap.py"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "ASWE: Update Anchors",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "scripts/aswe_update_anchors.py",
+        "--write"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "ASWE: Preflight Changed Files",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "scripts/optionb/scan_incremental.sh --scope changed && scripts/optionb/preflight.sh"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "ASWE: Export Tooling Snapshot",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "RemoteSigned",
+        "-File",
+        "scripts/optionb/Export-ToolingSnapshot_V5.ps1",
+        "-CodexConfigSource",
+        "auto"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      }
     }
   ]
 }
