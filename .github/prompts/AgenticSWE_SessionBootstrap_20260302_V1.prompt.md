@@ -1,24 +1,36 @@
-# AgenticSWE Session Bootstrap (Business Sync)
+# AgenticSWE Session Bootstrap (Legacy Manual Fallback)
+
+Status: legacy/manual fallback.
+Nicht kanonisch: Ein neuer Session-Start laeuft ueber `AGENTS.md -> ENTRY_LATEST -> RepoStatusUpdate -> Workstream`.
+Nutze diese Datei nur als optionalen Operator-Shortcut, wenn ein manueller GUI-Helfer hilfreich ist.
 
 ```text
-SESSION_BOOTSTRAP (ASWE)
+OPTIONAL_OPERATOR_SHORTCUT_BOOTSTRAP (ASWE)
 
-Nutze den GitHub Sync Connector. Ziele: Standup + Routing + naechste PR-Slices.
+Nutze den GitHub Sync Connector.
 
-1) Finde und lies die neueste Version dieser Dateien (nach Dateinamen-Schema und Vx):
+1) Oeffne zuerst die kanonischen Navigationsanker:
+   - in der GUI: neuestes ENTRY_LATEST
+   - repo-lokal mit Codex: AGENTS.md und dann ENTRY_LATEST
+   - aktuelles RepoStatusUpdate
+   - passenden Workstream
+
+2) Ziehe nur bei Bedarf Tiefenanker nach:
    - AgenticSWE_KnowledgeOS_RepoMeaningMap_*
    - AgenticSWE_KnowledgeOS_RepoStateSnapshot_*
    - AgenticSWE_KnowledgeOS_RepoManifest_*
-   - AgenticSWE_PreflightGates_Local_Runbook_*
 
-2) Gib ein Standup in exakt dieser Struktur:
-   - SSOT Anker (Dateiname + Kernaussage je Anker)
-   - Aktive Workstreams (max 3) + Status
-   - Offene TODOs (top 5, nach Impact)
-   - Naechste PR-Slices (2–3, keep diffs small, Pfade + DoD)
-   - Stop-&-Ask (falls du `.github/**`, Secrets, CI/Deploy siehst)
+3) Gib danach ein knappes Standup in dieser Struktur:
+   - Kanonische Anker
+   - Aktiver Workstream
+   - Naechste Thin Slices
+   - Stop-&-Ask
 
-3) Regeln:
+4) Regeln:
    - Kein Raten: wenn unklar, als TODO/Claim markieren.
    - Keine repo-weite Cleanup-Aktion vorschlagen, ausser als separaten phasenweisen Plan.
 ```
+
+Hinweis:
+- Dieser Legacy-Shortcut ersetzt nicht den kanonischen Session-Start.
+- Ein neuer Chat muss auch ohne diesen Prompt korrekt starten koennen.
