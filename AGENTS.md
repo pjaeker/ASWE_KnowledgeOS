@@ -1,7 +1,8 @@
-# AGENTS.md — ASWE KnowledgeOS Repo-Karte
+# AGENTS.md - ASWE KnowledgeOS Repo-Karte
 
-Diese Datei ist die operative Startkarte fuer ChatGPT, Codex und Copilot im Repo `ASWE_KnowledgeOS`.
-Sie ersetzt kein SSOT-Artefakt, sondern zeigt auf die autoritativen Anker.
+Diese Datei ist die repo-lokale operative Startkarte fuer Codex und Copilot im Repo `ASWE_KnowledgeOS`.
+ChatGPT GUI startet semantisch ueber `ENTRY_LATEST` und trifft danach denselben kanonischen Kernfluss.
+Diese Datei ersetzt kein SSOT-Artefakt, sondern zeigt auf die autoritativen Anker.
 
 ## Read first
 
@@ -11,9 +12,11 @@ Sie ersetzt kein SSOT-Artefakt, sondern zeigt auf die autoritativen Anker.
 
 ## Zielbild fuer neue Sessions
 
-- Startpunkt ist **Entry-LATEST**.
-- Danach folgt das aktuelle **RepoStatusUpdate**.
-- Danach werden nur die **aktiven Workstreams** geoeffnet.
+- ChatGPT GUI startet semantisch mit **ENTRY_LATEST**.
+- Codex/Copilot starten repo-lokal in `AGENTS.md` und wechseln dann in denselben Kernfluss.
+- Der kanonische Kernfluss lautet: `ENTRY_LATEST -> RepoStatusUpdate -> Workstream`.
+- `ENTRY_LATEST` bleibt ein duenner Pointer-Bund, kein operativer Sammelpunkt.
+- `NextChat-Handoff` ist ein optionales Resume-Sidecar, keine Standardvoraussetzung.
 - MeaningMap, Snapshot und Manifest dienen als nachgelagerte SSOT-Anker fuer Determinismus, Audit und Strukturfragen.
 
 ## Wenn du etwas finden willst
@@ -35,7 +38,15 @@ Nutze diese Reihenfolge:
 4. Evidence erzeugen, wenn relevant:
    - ToolingSnapshot
    - PR-Report Draft
-   - Handoff / Status Update nur bei echtem Erkenntnisgewinn
+   - RepoStatusUpdate nur bei geaenderter operativer Wahrheit
+   - NextChat-Handoff nur bei echtem Resume-Bedarf
+
+## Closeout-Reihenfolge
+
+1. `RepoStatusUpdate` aktualisieren, wenn sich operative Wahrheit geaendert hat.
+2. Betroffenen Workstream aktualisieren, wenn Ziel, Scope, DoD oder naechste Slices betroffen sind.
+3. MeaningMap, Snapshot und Manifest nur bei echter Struktur- oder Routing-Aenderung aktualisieren.
+4. Danach `ENTRY_LATEST` refreshen.
 
 ## Wichtige Invarianten
 
@@ -43,6 +54,7 @@ Nutze diese Reihenfolge:
 - Kein zweiter autonomer PR-Pfad durch Codex.
 - Hooks sind Feedback, nicht Enforcement.
 - CI und Writer bleiben die harten Governance-Layer.
+- Legacy-Prompt-Dateien sind kein primaerer GUI-Weg.
 
 ## Standard-Tasks in VS Code
 
