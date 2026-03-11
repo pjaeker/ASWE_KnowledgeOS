@@ -8,6 +8,8 @@ import sys
 from dataclasses import dataclass
 from typing import Iterable, List, Optional
 
+from validate_session_contract import print_report, run_validation
+
 VERSION_RE = re.compile(r"(?P<date>20\d{6})_V(?P<version>\d+)")
 
 
@@ -88,6 +90,11 @@ def rel(path: Optional[pathlib.Path], root: pathlib.Path) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description="ASWE repo bootstrap helper")
     parser.add_argument("--repo-root", default=".", help="repo root or any child path")
+    parser.add_argument(
+        "--validate-session-contract",
+        action="store_true",
+        help="run the session-contract validator before returning bootstrap guidance",
+    )
     args = parser.parse_args()
 
     repo_root = repo_root_from(pathlib.Path(args.repo_root).resolve())
@@ -112,9 +119,19 @@ def main() -> int:
     print(f"- MeaningMap: {rel(state.meaning_map, repo_root)}")
     print(f"- StateSnapshot: {rel(state.snapshot, repo_root)}")
     print(f"- Manifest: {rel(state.manifest, repo_root)}")
+
+    if args.validate_session_contract:
+        print()
+        report = run_validation(repo_root)
+        print_report(report)
+        if report.fail_count:
+            print("Bootstrap aborted: session-contract validation reported fail findings.")
+            return 1
+
     print()
     print("## Next step")
     print("- Open Entry-LATEST, then RepoStatusUpdate, then the active workstream you want to advance.")
+    print("- Pull MeaningMap, Snapshot and Manifest only if routing, structure or audit context is still needed.")
     return 0
 
 

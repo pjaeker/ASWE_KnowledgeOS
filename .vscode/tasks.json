@@ -82,7 +82,26 @@
       "type": "shell",
       "command": "python",
       "args": [
-        "scripts/aswe_bootstrap.py"
+        "scripts/aswe_bootstrap.py",
+        "--validate-session-contract"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "ASWE: Validate Session Contract",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "scripts/validate_session_contract.py"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -120,7 +139,7 @@
       "command": "bash",
       "args": [
         "-lc",
-        "scripts/optionb/scan_incremental.sh --scope changed && scripts/optionb/preflight.sh"
+        "scripts/optionb/scan_incremental.sh --scope changed && scripts/optionb/preflight.sh && python scripts/validate_session_contract.py"
       ],
       "options": {
         "cwd": "${workspaceFolder}"

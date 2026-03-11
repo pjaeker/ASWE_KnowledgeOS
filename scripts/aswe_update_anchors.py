@@ -9,6 +9,8 @@ import sys
 from dataclasses import dataclass
 from typing import Iterable, List, Optional
 
+from validate_session_contract import print_report, run_validation
+
 VERSION_RE = re.compile(r"(?P<date>20\d{6})_V(?P<version>\d+)")
 PROJECT = "ASWE_KnowledgeOS"
 
@@ -96,7 +98,7 @@ version: V{version}
 date: {date_iso}
 status: draft
 audience: [human, llm]
-intent: \"Single Entry Point: minimaler Startpunkt fuer neue Chats/Tools. Zeigt auf die neuesten SSOT-Anker + aktive Workstreams.\"
+intent: \"Single Entry Point: minimaler Startpunkt als Pointer-Bund fuer neue Chats/Tools. Zeigt auf die neuesten SSOT-Anker + aktive Workstreams.\"
 tags:
   - layer/state
   - artifact/entry
@@ -105,7 +107,7 @@ tags:
   - topic/workstreams
 ---
 
-# ENTRY (LATEST) — Start Here
+# ENTRY (LATEST) - Start Here
 
 ## 0) Read first
 - Status Update: `{rel(state.repo_status, repo_root)}`
@@ -127,6 +129,7 @@ tags:
 
 ## 4) Standard-Tasks
 - `ASWE: Bootstrap (Read Entry + Status + WS)`
+- `ASWE: Validate Session Contract`
 - `ASWE: Update Anchors`
 - `ASWE: Preflight Changed Files`
 - `ASWE: Export Tooling Snapshot`
@@ -134,6 +137,7 @@ tags:
 ## 5) Hinweise
 - Diese Entry-Version wurde am {date_iso} neu geschrieben.
 - Die Datei aktualisiert Pointer auf die neuesten vorhandenen Anker.
+- `ENTRY_LATEST` bleibt ein duenner Pointer-Bund und kein operativer Sammelpunkt.
 - Manifest, Snapshot und MeaningMap werden durch diesen Schritt **nicht** neu erzeugt, sondern nur neu referenziert.
 - Dateikonvention: `meta/state/entry/AgenticSWE_KnowledgeOS_ENTRY_LATEST_{date_compact}_Vx.md`
 """
@@ -146,17 +150,24 @@ def main() -> int:
     args = parser.parse_args()
 
     repo_root = repo_root_from(pathlib.Path(args.repo_root).resolve())
+    report = run_validation(repo_root)
+    print_report(report)
+    if args.write and report.fail_count:
+        print("ABORTED: session-contract validation reported fail findings. ENTRY_LATEST was not refreshed.")
+        return 1
+
     state = collect(repo_root)
     today = dt.date.today()
     yyyymmdd = today.strftime("%Y%m%d")
 
     entry_dir = repo_root / "meta/state/entry"
     entry_dir.mkdir(parents=True, exist_ok=True)
-    version = next_version(entry_dir, f"AgenticSWE_KnowledgeOS_ENTRY_LATEST", yyyymmdd, ".md")
+    version = next_version(entry_dir, "AgenticSWE_KnowledgeOS_ENTRY_LATEST", yyyymmdd, ".md")
     target = entry_dir / f"AgenticSWE_KnowledgeOS_ENTRY_LATEST_{yyyymmdd}_V{version}.md"
 
     markdown = build_markdown(state, repo_root, today, version)
 
+    print()
     print(f"repo_root: {repo_root}")
     print(f"target: {target.relative_to(repo_root).as_posix()}")
     print()

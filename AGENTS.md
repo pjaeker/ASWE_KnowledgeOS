@@ -34,7 +34,7 @@ Nutze diese Reihenfolge:
 
 1. Aktiven Workstream bestimmen.
 2. Nur einen kleinen Thin Slice schneiden.
-3. Changed-files Preflight ausfuehren.
+3. Changed-files Preflight und Session-Contract-Validator ausfuehren.
 4. Evidence erzeugen, wenn relevant:
    - ToolingSnapshot
    - PR-Report Draft
@@ -59,6 +59,7 @@ Nutze diese Reihenfolge:
 ## Standard-Tasks in VS Code
 
 - `ASWE: Bootstrap (Read Entry + Status + WS)`
+- `ASWE: Validate Session Contract`
 - `ASWE: Update Anchors`
 - `ASWE: Preflight Changed Files`
 - `ASWE: Export Tooling Snapshot`
