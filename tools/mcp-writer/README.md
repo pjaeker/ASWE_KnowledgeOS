@@ -2,8 +2,8 @@
 
 This service is a **remote PR broker** for `pjaeker/ASWE_KnowledgeOS`.
 
-It is designed to sit behind Railway and expose a small HTTP tool surface
-that can later be adapted to a full MCP transport.
+It is designed to sit behind Railway and expose a protected MCP endpoint
+with ChatGPT-compatible discovery.
 
 ## Included capabilities
 
@@ -33,12 +33,18 @@ that can later be adapted to a full MCP transport.
   - file read
   - tree listing
 - Runtime policy validation
+- Protected resource discovery at `/.well-known/oauth-protected-resource`
+- MCP JSON-RPC over `POST /mcp` for `initialize`, `tools/list`, and `tools/call`
+- Legacy `POST /mcp` tool payload support during the transition
 
 ## What is intentionally still thin
 
-- The HTTP transport is a lightweight JSON tool broker at `POST /mcp`
-  instead of the full official MCP SDK transport.
-- Auth is optional bearer-token style (`MCP_SHARED_SECRET`) for simple deployment.
+- `/.well-known/oauth-protected-resource` already points ahead to `/oauth`,
+  but the actual OAuth authorization server endpoints come in the next slice.
+- Until `/oauth` is implemented, access can stay gated by the existing
+  transitional bearer token (`MCP_SHARED_SECRET`).
+- Legacy `GET /tools` remains as an optional debug path, but discovery is now
+  driven by the MCP route and protected-resource metadata.
 - No persistence layer.
 
 ## Deploy on Railway
@@ -52,6 +58,8 @@ that can later be adapted to a full MCP transport.
 6. Deploy
 7. Check:
    - `GET /healthz`
+   - `GET /.well-known/oauth-protected-resource`
+   - unauthenticated `POST /mcp` returns `401` + `WWW-Authenticate`
    - `GET /tools`
 
 ## Environment variables
@@ -77,6 +85,26 @@ curl https://YOUR-DOMAIN/healthz
 ### Tools
 ```bash
 curl https://YOUR-DOMAIN/tools
+```
+
+### Protected resource metadata
+```bash
+curl https://YOUR-DOMAIN/.well-known/oauth-protected-resource
+```
+
+### MCP auth challenge
+```bash
+curl -i -X POST https://YOUR-DOMAIN/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
+```
+
+### MCP initialize (transitional shared-secret auth)
+```bash
+curl -X POST https://YOUR-DOMAIN/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_SHARED_SECRET" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
 ```
 
 ### Create branch
@@ -137,15 +165,17 @@ curl -X POST https://YOUR-DOMAIN/mcp \
 
 1. Deploy with `MCP_SHARED_SECRET` set
 2. Hit `GET /healthz`
-3. Hit `GET /tools`
-4. Try `read_file`
-5. Try `create_branch`
-6. Try `commit_files` on an allowed docs path
-7. Try `open_pr`
+3. Hit `GET /.well-known/oauth-protected-resource`
+4. Confirm unauthenticated `POST /mcp` returns `401` + `WWW-Authenticate`
+5. Hit `GET /tools`
+6. Try MCP `initialize`
+7. Try `read_file`
+8. Try `create_branch`
+9. Try `commit_files` on an allowed docs path
+10. Try `open_pr`
 
 ## Next step after this scaffold
 
 If you want, the next upgrade should be:
-- replace the thin `/mcp` JSON broker with the official MCP SDK transport
-- add OAuth / stronger auth in front of the service
+- fill in `/oauth/*` discovery, token, and JWKS endpoints
 - add request / audit logging

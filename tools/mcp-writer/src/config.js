@@ -29,11 +29,19 @@ export function loadConfig() {
   const privateKey = privateKeyRaw.includes("\n")
     ? privateKeyRaw.replace(/\\n/g, "\n")
     : privateKeyRaw;
+  const mcpSharedSecret = optional("MCP_SHARED_SECRET", "");
 
   return {
     port: Number(optional("PORT", "3000")),
     nodeEnv: optional("NODE_ENV", "development"),
-    mcpSharedSecret: optional("MCP_SHARED_SECRET", ""),
+    serviceName: optional("SERVICE_NAME", "aswe-mcp-writer"),
+    serviceVersion: optional("SERVICE_VERSION", "0.2.0"),
+    publicBaseUrl: optional("PUBLIC_BASE_URL", ""),
+    railwayPublicDomain: optional("RAILWAY_PUBLIC_DOMAIN", ""),
+    mcpBasePath: optional("MCP_BASE_PATH", "/mcp"),
+    oauthBasePath: optional("OAUTH_BASE_PATH", "/oauth"),
+    mcpProtocolVersion: optional("MCP_PROTOCOL_VERSION", "2025-03-26"),
+    mcpSharedSecret,
     github: {
       appId: required("GITHUB_APP_ID"),
       installationId: required("GITHUB_INSTALLATION_ID"),
