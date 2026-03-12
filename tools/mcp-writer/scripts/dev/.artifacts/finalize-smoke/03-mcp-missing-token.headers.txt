@@ -1,0 +1,6 @@
+﻿WWW-Authenticate: Bearer realm="aswe-mcp-writer", resource_metadata="http://127.0.0.1:4313/.well-known/oauth-protected-resource", error="invalid_token", error_description="OAuth is required for the MCP endpoint."
+Date: Thu, 12 Mar 2026 17:47:20 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Content-Type: application/json; charset=utf-8
+Content-Length: 168

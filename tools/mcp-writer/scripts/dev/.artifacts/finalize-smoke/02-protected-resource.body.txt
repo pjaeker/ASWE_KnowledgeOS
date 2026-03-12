@@ -1,0 +1,1 @@
+﻿{"resource":"http://127.0.0.1:4313/mcp","resource_name":"ASWE MCP Writer","authorization_servers":["http://127.0.0.1:4313/oauth"],"bearer_methods_supported":["header"]}

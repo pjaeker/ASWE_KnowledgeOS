@@ -1,0 +1,66 @@
+﻿{
+  "generatedAt": "2026-03-12T18:47:20.5495268+01:00",
+  "baseUrl": "http://127.0.0.1:4313",
+  "outDir": "C:\\Users\\PJ\\.codex\\worktrees\\0eff\\ASWE_KnowledgeOS\\tools\\mcp-writer\\scripts\\dev\\.artifacts\\finalize-smoke",
+  "contract": {
+    "protectedResourceUrl": "http://127.0.0.1:4313/.well-known/oauth-protected-resource",
+    "mcpUrl": "http://127.0.0.1:4313/mcp",
+    "expectedAuthorizationServer": "http://127.0.0.1:4313/oauth",
+    "mcpMethod": "POST",
+    "mcpBody": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}",
+    "notes": [
+      "POST initialize is the default PR-1 smoke because the current transport lands as JSON-RPC over HTTP.",
+      "OAuth preview probing is informational only until the PR-2 OAuth server exists."
+    ]
+  },
+  "checks": [
+    {
+      "name": "healthz",
+      "required": true,
+      "method": "GET",
+      "url": "http://127.0.0.1:4313/healthz",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "protected-resource",
+      "required": true,
+      "method": "GET",
+      "url": "http://127.0.0.1:4313/.well-known/oauth-protected-resource",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "mcp-missing-token",
+      "required": true,
+      "method": "POST",
+      "url": "http://127.0.0.1:4313/mcp",
+      "expectedStatus": [
+        401
+      ],
+      "status": 401,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "mcp-wrong-bearer",
+      "required": true,
+      "method": "POST",
+      "url": "http://127.0.0.1:4313/mcp",
+      "expectedStatus": [
+        401
+      ],
+      "status": 401,
+      "passed": true,
+      "notes": []
+    }
+  ]
+}

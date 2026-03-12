@@ -3,7 +3,7 @@
 This service is a **remote PR broker** for `pjaeker/ASWE_KnowledgeOS`.
 
 It is designed to sit behind Railway and expose a protected MCP endpoint
-with ChatGPT-compatible discovery.
+with ChatGPT-compatible discovery and an OAuth-first bootstrap path.
 
 ## Included capabilities
 
@@ -35,16 +35,18 @@ with ChatGPT-compatible discovery.
 - Runtime policy validation
 - Protected resource discovery at `/.well-known/oauth-protected-resource`
 - MCP JSON-RPC over `POST /mcp` for `initialize`, `tools/list`, and `tools/call`
-- Legacy `POST /mcp` tool payload support during the transition
+- OAuth metadata at `/oauth/.well-known/openid-configuration`
+- OAuth authorization-server metadata at `/oauth/.well-known/oauth-authorization-server`
+- DCR at `POST /oauth/register`
+- Authorization Code + PKCE endpoints at `/oauth/authorize` and `/oauth/token`
+- JWKS at `/oauth/jwks`
 
 ## What is intentionally still thin
 
-- `/.well-known/oauth-protected-resource` already points ahead to `/oauth`,
-  but the actual OAuth authorization server endpoints come in the next slice.
-- Until `/oauth` is implemented, access can stay gated by the existing
-  transitional bearer token (`MCP_SHARED_SECRET`).
-- Legacy `GET /tools` remains as an optional debug path, but discovery is now
-  driven by the MCP route and protected-resource metadata.
+- Client registrations and authorization codes are in-memory for PR-2.
+- `OAUTH_DEV_SUBJECT` is required before `/oauth/authorize` will issue codes.
+- Tool-specific OAuth scopes stay for PR-3; PR-2 keeps the OAuth bootstrap generic.
+- Legacy `MCP_SHARED_SECRET` remains an optional fallback for non-OAuth clients, but OAuth is now the primary path for ChatGPT setup.
 - No persistence layer.
 
 ## Deploy on Railway
@@ -59,12 +61,19 @@ with ChatGPT-compatible discovery.
 7. Check:
    - `GET /healthz`
    - `GET /.well-known/oauth-protected-resource`
+   - `GET /oauth/.well-known/openid-configuration`
+   - `GET /oauth/.well-known/oauth-authorization-server`
+   - `POST /oauth/register`
    - unauthenticated `POST /mcp` returns `401` + `WWW-Authenticate`
-   - `GET /tools`
 
 ## Environment variables
 
 See `.env.example`.
+
+Key OAuth notes:
+- `PUBLIC_BASE_URL` keeps discovery URLs stable behind Railway.
+- `OAUTH_DEV_SUBJECT` enables development authorization codes for PR-2.
+- `OAUTH_JWT_PRIVATE_KEY` is optional; if omitted, the service generates an ephemeral signing key at boot.
 
 ## Required GitHub App permissions
 
@@ -82,14 +91,32 @@ Install the app on `pjaeker/ASWE_KnowledgeOS`.
 curl https://YOUR-DOMAIN/healthz
 ```
 
-### Tools
-```bash
-curl https://YOUR-DOMAIN/tools
-```
-
 ### Protected resource metadata
 ```bash
 curl https://YOUR-DOMAIN/.well-known/oauth-protected-resource
+```
+
+### OIDC metadata
+```bash
+curl https://YOUR-DOMAIN/oauth/.well-known/openid-configuration
+```
+
+### OAuth authorization-server metadata
+```bash
+curl https://YOUR-DOMAIN/oauth/.well-known/oauth-authorization-server
+```
+
+### Dynamic client registration
+```bash
+curl -X POST https://YOUR-DOMAIN/oauth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_name": "ChatGPT Connector",
+    "redirect_uris": ["https://chat.openai.com/aip/callback"],
+    "grant_types": ["authorization_code"],
+    "response_types": ["code"],
+    "token_endpoint_auth_method": "none"
+  }'
 ```
 
 ### MCP auth challenge
@@ -99,7 +126,7 @@ curl -i -X POST https://YOUR-DOMAIN/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
 ```
 
-### MCP initialize (transitional shared-secret auth)
+### MCP initialize (legacy shared-secret fallback)
 ```bash
 curl -X POST https://YOUR-DOMAIN/mcp \
   -H "Content-Type: application/json" \
@@ -107,75 +134,22 @@ curl -X POST https://YOUR-DOMAIN/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
 ```
 
-### Create branch
-```bash
-curl -X POST https://YOUR-DOMAIN/mcp \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_SHARED_SECRET" \
-  -d '{
-    "tool": "create_branch",
-    "args": {
-      "repo": "pjaeker/ASWE_KnowledgeOS",
-      "base": "main",
-      "name": "chatgpt/demo-mcp-branch"
-    }
-  }'
-```
-
-### Commit files
-```bash
-curl -X POST https://YOUR-DOMAIN/mcp \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_SHARED_SECRET" \
-  -d '{
-    "tool": "commit_files",
-    "args": {
-      "repo": "pjaeker/ASWE_KnowledgeOS",
-      "branch": "chatgpt/demo-mcp-branch",
-      "message": "docs: add demo note",
-      "files": [
-        {
-          "path": "meta/demo-note.md",
-          "content": "# Demo\n\nHello from MCP writer.\n"
-        }
-      ]
-    }
-  }'
-```
-
-### Open draft PR
-```bash
-curl -X POST https://YOUR-DOMAIN/mcp \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_SHARED_SECRET" \
-  -d '{
-    "tool": "open_pr",
-    "args": {
-      "repo": "pjaeker/ASWE_KnowledgeOS",
-      "base": "main",
-      "head": "chatgpt/demo-mcp-branch",
-      "title": "docs: add demo note",
-      "body": "Draft PR created by MCP writer.",
-      "draft": true
-    }
-  }'
-```
-
 ## Recommended first deployment sequence
 
-1. Deploy with `MCP_SHARED_SECRET` set
-2. Hit `GET /healthz`
-3. Hit `GET /.well-known/oauth-protected-resource`
-4. Confirm unauthenticated `POST /mcp` returns `401` + `WWW-Authenticate`
-5. Hit `GET /tools`
-6. Try MCP `initialize`
-7. Try `read_file`
-8. Try `create_branch`
-9. Try `commit_files` on an allowed docs path
-10. Try `open_pr`
+1. Set `PUBLIC_BASE_URL`
+2. Optionally set `OAUTH_JWT_PRIVATE_KEY` for stable JWKS
+3. Set `OAUTH_DEV_SUBJECT` for development authorization codes
+4. Deploy
+5. Hit `GET /healthz`
+6. Hit `GET /.well-known/oauth-protected-resource`
+7. Hit `GET /oauth/.well-known/openid-configuration`
+8. Hit `GET /oauth/.well-known/oauth-authorization-server`
+9. Register a client with `POST /oauth/register`
+10. Confirm unauthenticated `POST /mcp` returns `401` + `WWW-Authenticate`
 
 ## Next step after this scaffold
 
 If you want, the next upgrade should be:
-- fill in `/oauth/*` discovery, token, and JWKS endpoints
-- add request / audit logging
+- bind OAuth scopes to MCP tool groups in PR-3
+- harden the authorization subject / consent layer beyond the PR-2 development bootstrap
+- add Railway CLI automation and end-to-end smoke scripts in PR-4
