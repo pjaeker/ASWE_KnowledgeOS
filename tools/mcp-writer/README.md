@@ -45,7 +45,7 @@ with ChatGPT-compatible discovery and an OAuth-first bootstrap path.
 
 ## What is intentionally still thin
 
-- Client registrations and authorization codes remain in-memory in PR-3.
+- Client registrations and authorization codes remain in-memory in this thin-slice baseline.
 - `OAUTH_DEV_SUBJECT` is required before `/oauth/authorize` will issue codes.
 - Legacy `mcp` remains a transitional superset alias for `mcp.read` + `mcp.write`.
 - Legacy `MCP_SHARED_SECRET` remains an optional fallback for non-OAuth clients.
@@ -159,9 +159,35 @@ curl -X POST https://YOUR-DOMAIN/mcp \
 10. Request `mcp.read` for read-only use or `mcp.write` for write-capable use
 11. Confirm unauthenticated `POST /mcp` returns `401` + `WWW-Authenticate`
 
-## Next step after this scaffold
+## CLI-first Railway workflow
+
+The scripts under `scripts/railway` keep the flow CLI-first and avoid storing
+real secrets in repo files.
+
+1. Export the values from `.env.example` into your shell or CI environment.
+2. Dry-run the variable upload:
+   `pwsh ./scripts/railway/set_env.ps1 -Service aswe-mcp-writer -Environment production -DryRun`
+3. Upload variables from process environment to Railway:
+   `pwsh ./scripts/railway/set_env.ps1 -Service aswe-mcp-writer -Environment production`
+4. Dry-run the deploy command:
+   `pwsh ./scripts/railway/deploy.ps1 -Service aswe-mcp-writer -Environment production -DryRun`
+5. Deploy the writer from the repo subdirectory via `railway up ... --path-as-root`:
+   `pwsh ./scripts/railway/deploy.ps1 -Service aswe-mcp-writer -Environment production`
+6. Run discovery and OAuth smoke checks:
+   `pwsh ./scripts/railway/smoke_oauth.ps1 -BaseUrl https://YOUR-DOMAIN`
+
+Useful flags:
+- `-ProbeDcr` also probes `POST /oauth/register`.
+- `-AuthorizationCode`, `-ClientId`, and `-CodeVerifier` let the script exchange a manually obtained code at `/oauth/token`.
+- `-AccessToken -ReadSmoke` lets the script do an authenticated MCP read smoke via `list_tree`.
+- `-PlanOnly` prints the smoke plan without making network calls.
+
+For a no-side-effect local rehearsal, run:
+`pwsh ./scripts/dev/pr4_railway_cli_dry_run.ps1 -BaseUrl https://writer.example.com`
+
+## Next step after this CLI baseline
 
 If you want, the next upgrade should be:
 - harden the authorization subject / consent layer beyond the PR-2 development bootstrap
-- add Railway CLI automation and end-to-end smoke scripts in PR-4
+- run an end-to-end ChatGPT Custom App test and capture a status/handover update
 
