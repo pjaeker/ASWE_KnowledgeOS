@@ -15,6 +15,7 @@ with ChatGPT-compatible discovery and an OAuth-first bootstrap path.
 
 ## Included safety controls
 
+- OAuth scope gate before MCP tool execution
 - Repo allowlist
 - Path allowlist / blocklist
 - Max changed files
@@ -33,6 +34,7 @@ with ChatGPT-compatible discovery and an OAuth-first bootstrap path.
   - file read
   - tree listing
 - Runtime policy validation
+- OAuth scope enforcement for `mcp.read` and `mcp.write`
 - Protected resource discovery at `/.well-known/oauth-protected-resource`
 - MCP JSON-RPC over `POST /mcp` for `initialize`, `tools/list`, and `tools/call`
 - OAuth metadata at `/oauth/.well-known/openid-configuration`
@@ -43,10 +45,10 @@ with ChatGPT-compatible discovery and an OAuth-first bootstrap path.
 
 ## What is intentionally still thin
 
-- Client registrations and authorization codes are in-memory for PR-2.
+- Client registrations and authorization codes remain in-memory in PR-3.
 - `OAUTH_DEV_SUBJECT` is required before `/oauth/authorize` will issue codes.
-- Tool-specific OAuth scopes stay for PR-3; PR-2 keeps the OAuth bootstrap generic.
-- Legacy `MCP_SHARED_SECRET` remains an optional fallback for non-OAuth clients, but OAuth is now the primary path for ChatGPT setup.
+- Legacy `mcp` remains a transitional superset alias for `mcp.read` + `mcp.write`.
+- Legacy `MCP_SHARED_SECRET` remains an optional fallback for non-OAuth clients.
 - No persistence layer.
 
 ## Deploy on Railway
@@ -72,8 +74,16 @@ See `.env.example`.
 
 Key OAuth notes:
 - `PUBLIC_BASE_URL` keeps discovery URLs stable behind Railway.
-- `OAUTH_DEV_SUBJECT` enables development authorization codes for PR-2.
+- `OAUTH_DEV_SUBJECT` enables development authorization codes for the thin-slice flow.
 - `OAUTH_JWT_PRIVATE_KEY` is optional; if omitted, the service generates an ephemeral signing key at boot.
+
+## AuthN / AuthZ / Policy
+
+- OAuth authenticates the caller and scopes MCP access.
+- `mcp.read` is required for `read_file` and `list_tree`.
+- `mcp.write` is required for `create_branch`, `commit_files`, and `open_pr`.
+- The transitional `mcp` scope still expands to both scopes for pre-PR-3 clients.
+- Writer policy still enforces repo allowlist, blocked paths, diff-size limits, and secret-pattern quickscan on the server.
 
 ## Required GitHub App permissions
 
@@ -113,6 +123,7 @@ curl -X POST https://YOUR-DOMAIN/oauth/register \
   -d '{
     "client_name": "ChatGPT Connector",
     "redirect_uris": ["https://chat.openai.com/aip/callback"],
+    "scope": "openid mcp.read",
     "grant_types": ["authorization_code"],
     "response_types": ["code"],
     "token_endpoint_auth_method": "none"
@@ -145,11 +156,12 @@ curl -X POST https://YOUR-DOMAIN/mcp \
 7. Hit `GET /oauth/.well-known/openid-configuration`
 8. Hit `GET /oauth/.well-known/oauth-authorization-server`
 9. Register a client with `POST /oauth/register`
-10. Confirm unauthenticated `POST /mcp` returns `401` + `WWW-Authenticate`
+10. Request `mcp.read` for read-only use or `mcp.write` for write-capable use
+11. Confirm unauthenticated `POST /mcp` returns `401` + `WWW-Authenticate`
 
 ## Next step after this scaffold
 
 If you want, the next upgrade should be:
-- bind OAuth scopes to MCP tool groups in PR-3
 - harden the authorization subject / consent layer beyond the PR-2 development bootstrap
 - add Railway CLI automation and end-to-end smoke scripts in PR-4
+

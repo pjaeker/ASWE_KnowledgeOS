@@ -1,6 +1,8 @@
 import express from "express";
+import { createMcpScopeMiddleware } from "./auth/require-scope.js";
 import { HttpError, toErrorPayload } from "./errors.js";
 import { createMcpRouter } from "./mcp/http.js";
+import { annotateToolDefinitions } from "./mcp/tools.js";
 import { createOAuthService } from "./oauth/server.js";
 import { buildProtectedResourceMetadata } from "./oauth/protected-resource.js";
 import { toolDefinitions } from "./tools.js";
@@ -8,6 +10,7 @@ import { toolDefinitions } from "./tools.js";
 export function createApp({ config, github }) {
   const app = express();
   const oauth = createOAuthService(config);
+  const requireMcpScope = createMcpScopeMiddleware(config);
 
   app.use(
     express.json({
@@ -33,12 +36,13 @@ export function createApp({ config, github }) {
   app.get("/tools", (req, res) => {
     res.json({
       ok: true,
-      tools: toolDefinitions(config.policy)
+      tools: annotateToolDefinitions(toolDefinitions(config.policy), config.policy)
     });
   });
 
   app.use(config.oauthBasePath, oauth.router);
   app.use(config.mcpBasePath, oauth.createMcpBridgeMiddleware());
+  app.use(config.mcpBasePath, requireMcpScope);
   app.use(config.mcpBasePath, createMcpRouter({ config, github }));
 
   app.use((error, req, res, next) => {

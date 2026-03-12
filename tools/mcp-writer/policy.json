@@ -18,6 +18,19 @@
     ".env.",
     "package-lock.json"
   ],
+  "toolScopes": {
+    "read_file": "mcp.read",
+    "list_tree": "mcp.read",
+    "create_branch": "mcp.write",
+    "commit_files": "mcp.write",
+    "open_pr": "mcp.write"
+  },
+  "scopeAliases": {
+    "mcp": [
+      "mcp.read",
+      "mcp.write"
+    ]
+  },
   "maxFiles": 10,
   "maxDiffLines": 3000,
   "defaultBaseBranch": "main",
