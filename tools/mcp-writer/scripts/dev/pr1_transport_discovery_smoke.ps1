@@ -168,7 +168,13 @@ function Invoke-Probe {
     $result.notes += "Expected HTTP status in [$($ExpectedStatus -join ', ')], got $statusCode."
   }
 
-  $assertionNotes = & $Assertion $response $headerMap $responseBody $jsonBody
+  try {
+    $assertionNotes = & $Assertion $response $headerMap $responseBody $jsonBody
+  } catch {
+    $result.notes += 'Assertion failed: ' + $_.Exception.Message
+    $assertionNotes = @()
+  }
+
   if ($assertionNotes -is [System.Array]) {
     $result.notes += $assertionNotes
   } elseif ($assertionNotes) {

@@ -1,0 +1,98 @@
+﻿{
+  "baseUrl": "https://asweknowledgeos-production.up.railway.app",
+  "outDir": "G:\\Program Files (x86)\\GitHub\\Repositories\\ASWE_KnowledgeOS\\tools\\mcp-writer\\scripts\\railway\\.artifacts\\pr4-smoke\\20260313-171811",
+  "passed": 0,
+  "failed": 6,
+  "results": [
+    {
+      "name": "healthz",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/healthz",
+      "expectedStatus": [
+        200
+      ],
+      "status": 502,
+      "passed": false,
+      "notes": [
+        "Expected HTTP status in [200], got 502.",
+        "Assertion failed: The property 'ok' cannot be found on this object. Verify that the property exists."
+      ]
+    },
+    {
+      "name": "protected-resource",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/.well-known/oauth-protected-resource",
+      "expectedStatus": [
+        200
+      ],
+      "status": 502,
+      "passed": false,
+      "notes": [
+        "Expected HTTP status in [200], got 502.",
+        "Assertion failed: The property 'resource' cannot be found on this object. Verify that the property exists."
+      ]
+    },
+    {
+      "name": "openid-configuration",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/.well-known/openid-configuration",
+      "expectedStatus": [
+        200
+      ],
+      "status": 502,
+      "passed": false,
+      "notes": [
+        "Expected HTTP status in [200], got 502.",
+        "Assertion failed: The property 'issuer' cannot be found on this object. Verify that the property exists."
+      ]
+    },
+    {
+      "name": "oauth-authorization-server",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/.well-known/oauth-authorization-server",
+      "expectedStatus": [
+        200
+      ],
+      "status": 502,
+      "passed": false,
+      "notes": [
+        "Expected HTTP status in [200], got 502.",
+        "Assertion failed: The property 'issuer' cannot be found on this object. Verify that the property exists."
+      ]
+    },
+    {
+      "name": "jwks",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/jwks",
+      "expectedStatus": [
+        200
+      ],
+      "status": 502,
+      "passed": false,
+      "notes": [
+        "Expected HTTP status in [200], got 502.",
+        "Assertion failed: The property 'keys' cannot be found on this object. Verify that the property exists."
+      ]
+    },
+    {
+      "name": "mcp-missing-token",
+      "required": true,
+      "method": "POST",
+      "url": "https://asweknowledgeos-production.up.railway.app/mcp",
+      "expectedStatus": [
+        401
+      ],
+      "status": 502,
+      "passed": false,
+      "notes": [
+        "Expected HTTP status in [401], got 502.",
+        "Missing WWW-Authenticate header on unauthorized MCP request."
+      ]
+    }
+  ]
+}
