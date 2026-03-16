@@ -1,0 +1,15 @@
+{
+  "project": "valiant-mindfulness",
+  "service": "ASWE_KnowledgeOS",
+  "environment": "production",
+  "baseUrl": "https://asweknowledgeos-production.up.railway.app",
+  "writerPath": "tools/mcp-writer",
+  "targetPort": 8080,
+  "rootDirectory": "/tools/mcp-writer",
+  "dockerfilePath": "tools/mcp-writer/Dockerfile",
+  "observedListenPort": 3000,
+  "evidence": {
+    "status": "Confirmed via railway status --json with explicit service and environment flags.",
+    "logs": "Confirmed via railway logs --service ASWE_KnowledgeOS --environment production --lines 50 --json: container starts, runs node src/index.js, and reports listening on port 3000."
+  }
+}
