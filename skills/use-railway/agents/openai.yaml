@@ -1,0 +1,3 @@
+interface:
+  display_name: "Use Railway"
+  short_description: "Operate Railway projects, deployments, config, and troubleshooting."
