@@ -1,0 +1,50 @@
+{
+  "index_id": "connector-agentic-news-intake-v2",
+  "goal": "Fast, low-friction Einstieg fuer Agenten mit GitHub-Connector bei beibehaltener Single-Router-Regel.",
+  "read_first": [
+    "AgenticSWE_AgenticNewsIntake_START_HERE_20260316_V2.md",
+    "AgenticSWE_AgenticNewsIntake_Manifest_20260316_V2.json",
+    "AgenticSWE_AgenticNewsIntake_ConnectorIndex_20260316_V2.json",
+    "AgenticSWE_AgenticNewsIntake_SourceRegister_20260316_V2.csv",
+    "AgenticSWE_AgenticNewsIntake_ClaimPack_20260316_V2.md",
+    "AgenticSWE_AgenticNewsIntake_Handoff_20260316_V2.md"
+  ],
+  "open_minimally": [
+    "Nur benoetigte Source Cards oeffnen.",
+    "Vor dem Oeffnen einer neuen URL zuerst in SourceRegister.csv nach dedupe_key suchen.",
+    "Deployment surfaces nur als derived surface behandeln, wenn das zugrunde liegende Repo bereits erfasst ist."
+  ],
+  "high_priority_filters": {
+    "needs_recheck": "yes",
+    "handbook_delta": [
+      "high",
+      "very_high",
+      "medium_high"
+    ],
+    "promotion_target": [
+      "handbook_candidate",
+      "template_candidate"
+    ]
+  },
+  "recommended_queries": [
+    "find rows where needs_recheck=yes",
+    "group by source_type and handbook_delta",
+    "list sources with fulltext_status containing snippet or readme",
+    "list handbook_candidate sources sorted by handbook_delta",
+    "find duplicates or derived surfaces from this delta session"
+  ],
+  "write_targets": [
+    "AgenticSWE_AgenticNewsIntake_SourceRegister_20260316_V2.csv",
+    "AgenticSWE_AgenticNewsIntake_SearchLog_20260310_V1.jsonl",
+    "AgenticSWE_AgenticNewsIntake_ClaimPack_20260316_V2.md",
+    "AgenticSWE_AgenticNewsIntake_ReadingQueue_20260316_V2.md",
+    "AgenticSWE_AgenticNewsIntake_SessionArchive_20260316_V2.md",
+    "sources/"
+  ],
+  "never_write_targets": [
+    "library/",
+    "handbook/",
+    "templates/",
+    "meta/ (unless explicitly tasked)"
+  ]
+}
