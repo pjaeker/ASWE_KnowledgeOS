@@ -1,3 +1,21 @@
 .tmp/
 debug.log
 tools/mcp-writer/logs
+
+# Secrets / local env
+.env
+.env.*
+.env.local
+.env.codex
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local Codex / Railway secrets
+.codex/secrets/*
+!.codex/secrets/.gitkeep
+!.codex/secrets/*.example
+
+# Optional local Railway artifacts / overrides
+tools/mcp-writer/scripts/railway/.artifacts/local/**
