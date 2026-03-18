@@ -1,0 +1,5 @@
+interface:
+  display_name: ASWE Session Closeout Guardrails
+  short_description: Close out ASWE-style repo sessions with fresh-evidence checks, artifact decisions, and optional bounded role recommendations
+policy:
+  allow_implicit_invocation: true
