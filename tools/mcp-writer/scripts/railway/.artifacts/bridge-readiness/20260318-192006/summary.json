@@ -1,0 +1,151 @@
+{
+  "baseUrl": "https://asweknowledgeos-production.up.railway.app",
+  "outDir": "C:\\Users\\PJ\\.codex\\worktrees\\b3d6\\ASWE_KnowledgeOS\\tools\\mcp-writer\\scripts\\railway\\.artifacts\\bridge-readiness\\20260318-192006",
+  "mode": {
+    "probeDcr": true,
+    "fullAuth": true,
+    "readSmoke": true,
+    "accessTokenProvided": false
+  },
+  "flags": {
+    "dcrBlockedByRedirectAllowlist": false,
+    "authorizeBlockedByRedirectAllowlist": false,
+    "authorizeBlockedByDevSubject": false
+  },
+  "passed": 11,
+  "failed": 0,
+  "results": [
+    {
+      "name": "healthz",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/healthz",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "protected-resource",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/.well-known/oauth-protected-resource",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "openid-configuration",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/.well-known/openid-configuration",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "oauth-authorization-server",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/.well-known/oauth-authorization-server",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "jwks",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/jwks",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "mcp-missing-token",
+      "required": true,
+      "method": "POST",
+      "url": "https://asweknowledgeos-production.up.railway.app/mcp",
+      "expectedStatus": [
+        401
+      ],
+      "status": 401,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "dcr-register",
+      "required": true,
+      "method": "POST",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/register",
+      "expectedStatus": [
+        201
+      ],
+      "status": 201,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "authorize-approve",
+      "required": true,
+      "method": "POST",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/authorize",
+      "expectedStatus": [
+        302
+      ],
+      "status": 302,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "token",
+      "required": true,
+      "method": "POST",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/token",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "mcp-initialize",
+      "required": true,
+      "method": "POST",
+      "url": "https://asweknowledgeos-production.up.railway.app/mcp",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "mcp-read-smoke",
+      "required": true,
+      "method": "POST",
+      "url": "https://asweknowledgeos-production.up.railway.app/mcp",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    }
+  ]
+}

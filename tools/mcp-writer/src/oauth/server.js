@@ -55,6 +55,22 @@ function validateAbsoluteUrl(urlValue, fieldName) {
   }
 }
 
+function ensureAllowedRedirectUri(redirectUri, config, fieldName) {
+  const allowlist = Array.isArray(config.oauth.allowedRedirectUris)
+    ? config.oauth.allowedRedirectUris
+    : [];
+
+  if (!allowlist.includes(redirectUri)) {
+    if (fieldName === "redirect_uris") {
+      throw new HttpError(400, "redirect_uris must contain only allowlisted absolute URLs");
+    }
+
+    throw new HttpError(400, "redirect_uri is not allowlisted for this deployment");
+  }
+
+  return redirectUri;
+}
+
 function appendQueryParams(baseUrl, params) {
   const url = new URL(baseUrl);
 
@@ -149,7 +165,8 @@ function getAuthorizeParams(req) {
 
 function normalizeRegistration(payload, config) {
   const redirectUris = ensureArray(payload.redirect_uris, [])
-    .map((value) => validateAbsoluteUrl(value, "redirect_uris"));
+    .map((value) => validateAbsoluteUrl(value, "redirect_uris"))
+    .map((value) => ensureAllowedRedirectUri(value, config, "redirect_uris"));
 
   if (redirectUris.length === 0) {
     throw new HttpError(400, "redirect_uris must contain at least one absolute URL");
@@ -213,6 +230,8 @@ function validateAuthorizeRequest(params, state, config) {
   if (!redirectUri) {
     throw new HttpError(400, "redirect_uri is required for clients with multiple registered redirect URIs");
   }
+
+  ensureAllowedRedirectUri(redirectUri, config, "redirect_uri");
 
   if (!client.redirectUris.includes(redirectUri)) {
     throw new HttpError(400, "redirect_uri is not registered for this client");

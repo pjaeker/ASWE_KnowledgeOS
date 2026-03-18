@@ -1,5 +1,6 @@
 param(
   [string]$TargetConfigPath = "",
+  [string]$HostNeutralSummaryPath = "",
   [string]$RailwayBin = "railway",
   [switch]$IncludeLogs
 )
@@ -92,6 +93,111 @@ function Load-TargetConfig {
   }
 
   return $config
+}
+
+function Load-HostNeutralSummary {
+  param(
+    [string]$Path
+  )
+
+  if ([string]::IsNullOrWhiteSpace($Path)) {
+    return [pscustomobject]@{
+      Available = $false
+      Path = ""
+      RequiredHealthy = $false
+      RequiredPassedCount = 0
+      RequiredFailedCount = 0
+      DcrBlockedByRedirectAllowlist = $false
+      AuthorizeBlockedByRedirectAllowlist = $false
+      AuthorizeBlockedByDevSubject = $false
+      AuthorizeStatus = $null
+      Error = ""
+    }
+  }
+
+  $resolvedPath = Resolve-RepoPath -Path $Path
+  if (-not (Test-Path -LiteralPath $resolvedPath)) {
+    return [pscustomobject]@{
+      Available = $false
+      Path = $resolvedPath
+      RequiredHealthy = $false
+      RequiredPassedCount = 0
+      RequiredFailedCount = 0
+      DcrBlockedByRedirectAllowlist = $false
+      AuthorizeBlockedByRedirectAllowlist = $false
+      AuthorizeBlockedByDevSubject = $false
+      AuthorizeStatus = $null
+      Error = "Summary file not found."
+    }
+  }
+
+  $summary = ConvertFrom-JsonCompat -Text (Get-Content -Raw -Path $resolvedPath)
+  $results = @($summary.results)
+  $coreResultNames = @(
+    "healthz",
+    "protected-resource",
+    "openid-configuration",
+    "oauth-authorization-server",
+    "jwks",
+    "mcp-missing-token"
+  )
+  $requiredResults = @($results | Where-Object { $coreResultNames -contains [string]$_.name })
+  $requiredFailed = @($requiredResults | Where-Object { -not $_.passed })
+  $authorizeResult = $results | Where-Object { $_.name -eq "authorize-approve" } | Select-Object -First 1
+  $authorizeNotes = @()
+
+  if ($null -ne $authorizeResult -and $null -ne $authorizeResult.notes) {
+    $authorizeNotes = @($authorizeResult.notes | ForEach-Object { [string]$_ })
+  }
+
+  $dcrResult = $results | Where-Object { $_.name -eq "dcr-register" } | Select-Object -First 1
+  $dcrNotes = @()
+
+  if ($null -ne $dcrResult -and $null -ne $dcrResult.notes) {
+    $dcrNotes = @($dcrResult.notes | ForEach-Object { [string]$_ })
+  }
+
+  $flags = if ($null -ne $summary -and $null -ne $summary.PSObject.Properties["flags"]) {
+    $summary.flags
+  } else {
+    $null
+  }
+  $dcrBlockedByRedirectAllowlist = if ($null -ne $flags -and $null -ne $flags.PSObject.Properties["dcrBlockedByRedirectAllowlist"]) {
+    [bool]$flags.dcrBlockedByRedirectAllowlist
+  } else {
+    @(
+      $dcrNotes | Where-Object { $_ -match "OAUTH_ALLOWED_REDIRECT_URIS|allowlist" }
+    ).Count -gt 0
+  }
+
+  $authorizeBlockedByRedirectAllowlist = if ($null -ne $flags -and $null -ne $flags.PSObject.Properties["authorizeBlockedByRedirectAllowlist"]) {
+    [bool]$flags.authorizeBlockedByRedirectAllowlist
+  } else {
+    @(
+      $authorizeNotes | Where-Object { $_ -match "OAUTH_ALLOWED_REDIRECT_URIS|allowlist" }
+    ).Count -gt 0
+  }
+
+  $authorizeBlockedByDevSubject = @(
+    $authorizeNotes | Where-Object { $_ -match "OAUTH_DEV_SUBJECT" }
+  ).Count -gt 0
+
+  if ($null -ne $flags -and $null -ne $flags.PSObject.Properties["authorizeBlockedByDevSubject"]) {
+    $authorizeBlockedByDevSubject = [bool]$flags.authorizeBlockedByDevSubject
+  }
+
+  return [pscustomobject]@{
+    Available = $true
+    Path = $resolvedPath
+    RequiredHealthy = ($requiredResults.Count -eq $coreResultNames.Count) -and ($requiredFailed.Count -eq 0)
+    RequiredPassedCount = @($requiredResults | Where-Object { $_.passed }).Count
+    RequiredFailedCount = $requiredFailed.Count
+    DcrBlockedByRedirectAllowlist = $dcrBlockedByRedirectAllowlist
+    AuthorizeBlockedByRedirectAllowlist = $authorizeBlockedByRedirectAllowlist
+    AuthorizeBlockedByDevSubject = $authorizeBlockedByDevSubject
+    AuthorizeStatus = if ($null -ne $authorizeResult) { $authorizeResult.status } else { $null }
+    Error = ""
+  }
 }
 
 function Get-CommandPathSafe {
@@ -362,6 +468,49 @@ function Invoke-RepoScriptIfPresent {
   }
 }
 
+function Convert-BootstrapInspectionSummary {
+  param(
+    [pscustomobject]$CommandResult
+  )
+
+  if ($null -eq $CommandResult -or -not $CommandResult.Available -or -not $CommandResult.Success) {
+    return [pscustomobject]@{
+      Available = $false
+      AuthorizeBootstrapReady = $false
+      AllowlistMissing = $false
+      AllowlistInvalid = $false
+      DevSubjectMissing = $false
+      Error = if ($null -ne $CommandResult) { [string]$CommandResult.Output } else { "" }
+    }
+  }
+
+  $json = ConvertFrom-JsonSafe -Text $CommandResult.Output
+  if ($null -eq $json) {
+    return [pscustomobject]@{
+      Available = $false
+      AuthorizeBootstrapReady = $false
+      AllowlistMissing = $false
+      AllowlistInvalid = $false
+      DevSubjectMissing = $false
+      Error = "Bootstrap inspection output was not parseable JSON."
+    }
+  }
+
+  $blockers = @()
+  if ($null -ne $json.inspection -and $null -ne $json.inspection.blockers) {
+    $blockers = @($json.inspection.blockers | ForEach-Object { [string]$_ })
+  }
+
+  return [pscustomobject]@{
+    Available = $true
+    AuthorizeBootstrapReady = [bool]$json.inspection.authorizeBootstrapReady
+    AllowlistMissing = @($blockers | Where-Object { $_ -match "OAUTH_ALLOWED_REDIRECT_URIS is missing or empty" }).Count -gt 0
+    AllowlistInvalid = @($blockers | Where-Object { $_ -match "OAUTH_ALLOWED_REDIRECT_URIS contains invalid absolute URLs" }).Count -gt 0
+    DevSubjectMissing = @($blockers | Where-Object { $_ -match "OAUTH_DEV_SUBJECT is missing or empty" }).Count -gt 0
+    Error = ""
+  }
+}
+
 function Get-LogItemCount {
   param(
     [object]$Json,
@@ -401,16 +550,27 @@ function Get-DiagnosisPriority {
     [pscustomobject]$SetEnvDryRun,
 
     [Parameter(Mandatory = $true)]
-    [pscustomobject]$Target
+    [pscustomobject]$Target,
+
+    [Parameter(Mandatory = $true)]
+    [pscustomobject]$HostNeutralSummary,
+
+    [Parameter(Mandatory = $true)]
+    [pscustomobject]$BootstrapInspection
   )
 
   $items = @()
+  $effectiveHealthGreen = $Health.Healthy -or ($HostNeutralSummary.Available -and $HostNeutralSummary.RequiredHealthy)
   $hasPortEvidence = ($null -ne $Target.PSObject.Properties["targetPort"]) -and ($null -ne $Target.PSObject.Properties["observedListenPort"])
   $hasPortMismatch = $hasPortEvidence -and ([int]$Target.targetPort -ne [int]$Target.observedListenPort)
 
-  if ($Health.Healthy) {
+  if ($effectiveHealthGreen) {
     $portState = "clear"
-    $portReason = "No active /healthz symptom remains."
+    if ($Health.Healthy) {
+      $portReason = "No active /healthz symptom remains."
+    } else {
+      $portReason = "Host-neutral bridge summary confirms the required health and discovery endpoints are green; do not reopen PORT_OR_HEALTHCHECK from local PowerShell-only transport failures."
+    }
   } elseif ($hasPortMismatch) {
     $portState = "active"
     $portReason = "Railway status reports targetPort $($Target.targetPort) while recent runtime logs report the app listening on $($Target.observedListenPort); treat PORT_OR_HEALTHCHECK as the leading work hypothesis until /healthz is green."
@@ -432,9 +592,13 @@ function Get-DiagnosisPriority {
     Reason = $portReason
   }
 
-  if ($Health.Healthy) {
+  if ($effectiveHealthGreen) {
     $bootState = "clear"
-    $bootReason = "/healthz is green, so runtime is no longer the leading blocker."
+    if ($Health.Healthy) {
+      $bootReason = "/healthz is green, so runtime is no longer the leading blocker."
+    } else {
+      $bootReason = "Host-neutral bridge summary cleared runtime readiness, so BOOT_OR_RUNTIME is no longer the leading blocker."
+    }
   } elseif ($hasPortMismatch) {
     $bootState = "pending"
     $bootReason = "The container appears to boot and run node src/index.js, so BOOT_OR_RUNTIME stays secondary behind the current port hypothesis."
@@ -474,7 +638,37 @@ function Get-DiagnosisPriority {
     Reason = $startReason
   }
 
-  if ($SetEnvDryRun.Available -and -not $SetEnvDryRun.Success -and ($SetEnvDryRun.Output -match "Missing required environment variables")) {
+  $allowlistGuardActive = (
+    $BootstrapInspection.AllowlistMissing -or
+    $BootstrapInspection.AllowlistInvalid -or
+    $HostNeutralSummary.DcrBlockedByRedirectAllowlist -or
+    $HostNeutralSummary.AuthorizeBlockedByRedirectAllowlist
+  )
+  $devSubjectGuardActive = $BootstrapInspection.DevSubjectMissing -or $HostNeutralSummary.AuthorizeBlockedByDevSubject
+
+  if ($HostNeutralSummary.Available -and ($allowlistGuardActive -or $devSubjectGuardActive)) {
+    $envState = "active"
+    $envDetails = @()
+    if ($allowlistGuardActive) {
+      $envDetails += "redirect allowlist bootstrap is missing or rejecting the intended callback set"
+    }
+    if ($devSubjectGuardActive) {
+      $envDetails += "OAUTH_DEV_SUBJECT is still missing for development authorization code issuance"
+    }
+    $envReason = "Host-neutral probe and/or read-only bootstrap inspection cleared runtime readiness, and the active blocker is now ENV_DRIFT: " + ($envDetails -join "; ") + ". Treat this as the current bridge bootstrap guard, not as a runtime regression."
+  } elseif ($BootstrapInspection.Available -and ($allowlistGuardActive -or $devSubjectGuardActive)) {
+    $envState = "active"
+    $envDetails = @()
+    if ($BootstrapInspection.AllowlistMissing) {
+      $envDetails += "OAUTH_ALLOWED_REDIRECT_URIS is missing or empty"
+    } elseif ($BootstrapInspection.AllowlistInvalid) {
+      $envDetails += "OAUTH_ALLOWED_REDIRECT_URIS contains invalid absolute URLs"
+    }
+    if ($BootstrapInspection.DevSubjectMissing) {
+      $envDetails += "OAUTH_DEV_SUBJECT is missing or empty"
+    }
+    $envReason = "Read-only bootstrap inspection is enough to classify the live blocker as ENV_DRIFT: " + ($envDetails -join "; ") + "."
+  } elseif ($SetEnvDryRun.Available -and -not $SetEnvDryRun.Success -and ($SetEnvDryRun.Output -match "Missing required environment variables")) {
     $envState = "pending"
     $envReason = "Local dry-run is missing required variables, but ENV_DRIFT stays behind health and runtime until /healthz is green."
   } elseif ($SetEnvDryRun.Available) {
@@ -492,7 +686,10 @@ function Get-DiagnosisPriority {
     Reason = $envReason
   }
 
-  if ($Health.Healthy) {
+  if ($effectiveHealthGreen -and ($allowlistGuardActive -or $devSubjectGuardActive)) {
+    $discoveryState = "next"
+    $discoveryReason = "Discovery is green; the next safe step is a read-only Railway variable inspection and controlled env update plan for OAUTH_ALLOWED_REDIRECT_URIS and OAUTH_DEV_SUBJECT before any manual ChatGPT E2E or environment mutation."
+  } elseif ($effectiveHealthGreen) {
     $discoveryState = "next"
     $discoveryReason = "/healthz is green, so Discovery/OAuth smoke can move back into the active queue."
   } else {
@@ -516,6 +713,7 @@ if (-not $TargetConfigPath) {
 
 $resolvedTargetPath = Resolve-RepoPath -Path $TargetConfigPath
 $target = Load-TargetConfig -Path $resolvedTargetPath
+$hostNeutralSummary = Load-HostNeutralSummary -Path $HostNeutralSummaryPath
 $resolvedWriterPath = Resolve-RepoPath -Path ([string]$target.writerPath)
 $railwayCommandPath = Get-CommandPathSafe -Name $RailwayBin
 $contextArguments = Get-RailwayContextArguments -Target $target
@@ -594,7 +792,33 @@ if ($health.Success) {
   Write-Host ("Health request failed: {0}" -f $health.Error)
 }
 
+Write-Section "Host-neutral bridge summary"
+if ($hostNeutralSummary.Available) {
+  Write-Host ("Summary path: {0}" -f $hostNeutralSummary.Path)
+  Write-Host ("Required checks passed: {0}" -f $hostNeutralSummary.RequiredPassedCount)
+  Write-Host ("Required checks failed: {0}" -f $hostNeutralSummary.RequiredFailedCount)
+  Write-Host ("Required health equivalent: {0}" -f $hostNeutralSummary.RequiredHealthy)
+  if ($null -ne $hostNeutralSummary.AuthorizeStatus) {
+    Write-Host ("Authorize status: {0}" -f $hostNeutralSummary.AuthorizeStatus)
+  }
+  Write-Host ("DCR blocked by redirect allowlist: {0}" -f $hostNeutralSummary.DcrBlockedByRedirectAllowlist)
+  Write-Host ("Authorize blocked by redirect allowlist: {0}" -f $hostNeutralSummary.AuthorizeBlockedByRedirectAllowlist)
+  Write-Host ("Authorize blocked by OAUTH_DEV_SUBJECT: {0}" -f $hostNeutralSummary.AuthorizeBlockedByDevSubject)
+} elseif (-not [string]::IsNullOrWhiteSpace($hostNeutralSummary.Path)) {
+  Write-Host ("Summary path: {0}" -f $hostNeutralSummary.Path)
+  Write-Host ("Summary unavailable: {0}" -f $hostNeutralSummary.Error)
+} else {
+  Write-Host "No host-neutral summary supplied."
+}
+
 Write-Section "Repo-local safe scripts"
+$bootstrapInspectionCommand = Invoke-RepoScriptIfPresent -Label "bootstrap inspect" -RelativePath "tools/mcp-writer/scripts/railway/inspect_bootstrap_readonly.ps1" -Arguments @(
+  "-TargetConfigPath", $resolvedTargetPath,
+  "-RailwayBin", $RailwayBin,
+  "-EmitJson"
+)
+$bootstrapInspection = Convert-BootstrapInspectionSummary -CommandResult $bootstrapInspectionCommand
+
 $setEnvDryRun = Invoke-RepoScriptIfPresent -Label "set_env dry-run" -RelativePath "tools/mcp-writer/scripts/railway/set_env.ps1" -Arguments @(
   "-RailwayBin", $RailwayBin,
   "-Service", [string]$target.service,
@@ -617,9 +841,20 @@ $smokePlan = Invoke-RepoScriptIfPresent -Label "smoke plan" -RelativePath "tools
   "-PlanOnly"
 )
 
+Write-Host ""
+if ($bootstrapInspection.Available) {
+  Write-Host ("Bootstrap inspection ready: {0}" -f $bootstrapInspection.AuthorizeBootstrapReady)
+  Write-Host ("Bootstrap allowlist missing: {0}" -f $bootstrapInspection.AllowlistMissing)
+  Write-Host ("Bootstrap allowlist invalid: {0}" -f $bootstrapInspection.AllowlistInvalid)
+  Write-Host ("Bootstrap dev subject missing: {0}" -f $bootstrapInspection.DevSubjectMissing)
+} elseif (-not [string]::IsNullOrWhiteSpace($bootstrapInspection.Error)) {
+  Write-Host ("Bootstrap inspection unavailable: {0}" -f $bootstrapInspection.Error)
+}
+
 Write-Section "Prepared read-only Railway commands"
 $preparedCommands = @(
   (Join-CommandPreview -Binary $RailwayBin -Arguments (Get-RailwayStatusArguments -Target $target)),
+  (Join-CommandPreview -Binary $RailwayBin -Arguments (@("variable", "list", "--json") + $contextArguments)),
   (Join-CommandPreview -Binary $RailwayBin -Arguments (@("deployment", "list", "--limit", "10", "--json") + $contextArguments)),
   (Join-CommandPreview -Binary $RailwayBin -Arguments (@("logs", "--lines", "200", "--json") + $contextArguments)),
   (Join-CommandPreview -Binary $RailwayBin -Arguments (@("logs", "--build", "--lines", "200", "--json") + $contextArguments))
@@ -644,7 +879,7 @@ if ($IncludeLogs -and $railwayCommandPath) {
   Write-Host ("build log items: {0}" -f (Get-LogItemCount -Json $buildLogs.Json -FallbackText $buildLogs.Output))
 }
 
-$diagnosis = Get-DiagnosisPriority -Health $health -DeployDryRun $deployDryRun -SetEnvDryRun $setEnvDryRun -Target $target
+$diagnosis = Get-DiagnosisPriority -Health $health -DeployDryRun $deployDryRun -SetEnvDryRun $setEnvDryRun -Target $target -HostNeutralSummary $hostNeutralSummary -BootstrapInspection $bootstrapInspection
 
 Write-Section "Diagnosis priority"
 foreach ($item in $diagnosis) {
@@ -660,12 +895,14 @@ Write-Host ("Leading class (heuristic): {0}" -f $leadingClass.Class)
 
 Write-Section "Doctor result"
 $cliPreflightOk = $versionResult.Success -and $statusResult.Success
+$effectiveHealthOk = $health.Healthy -or $hostNeutralSummary.RequiredHealthy
 Write-Host ("CLI preflight ok: {0}" -f $cliPreflightOk)
 Write-Host ("whoami optional ok: {0}" -f $whoamiResult.Success)
-Write-Host ("Health ok: {0}" -f $health.Healthy)
+Write-Host ("PowerShell health ok: {0}" -f $health.Healthy)
+Write-Host ("Effective health ok: {0}" -f $effectiveHealthOk)
 Write-Host ("Smoke plan available: {0}" -f $smokePlan.Available)
 
-if ($cliPreflightOk -and $health.Healthy) {
+if ($cliPreflightOk -and $effectiveHealthOk) {
   exit 0
 }
 
