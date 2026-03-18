@@ -1,0 +1,7 @@
+interface:
+  display_name: ASWE Triager
+  short_description: Read-first triager for competing hypotheses and next investigation steps
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  allow_implicit_invocation: true

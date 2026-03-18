@@ -1,0 +1,7 @@
+interface:
+  display_name: ASWE Mapper
+  short_description: Read-first mapper for workstream scope, anchors, and hidden coupling
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  allow_implicit_invocation: true

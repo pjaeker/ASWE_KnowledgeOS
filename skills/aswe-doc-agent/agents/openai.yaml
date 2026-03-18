@@ -1,0 +1,7 @@
+interface:
+  display_name: ASWE Doc Agent
+  short_description: Read-first wording specialist for README, runbook, and PR-report updates
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  allow_implicit_invocation: true
