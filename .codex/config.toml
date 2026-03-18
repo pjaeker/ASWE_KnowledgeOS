@@ -7,6 +7,12 @@
 [projects."g:/Program Files (x86)/GitHub/Repositories/ASWE_KnowledgeOS"]
 trust_level = "trusted"
 
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+network_access = true
+
 [agents]
 max_threads = 2
 max_depth = 1
