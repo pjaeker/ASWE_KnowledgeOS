@@ -5,7 +5,9 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "smoke:bridge-readiness": "node ./scripts/railway/bridge_readiness_probe.mjs",
+    "test:oauth": "node ./test/oauth-redirect-allowlist.test.mjs"
   },
   "dependencies": {
     "express": "^4.21.2",

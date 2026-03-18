@@ -1,0 +1,9 @@
+content-length: 168
+content-type: application/json; charset=utf-8
+date: Wed, 18 Mar 2026 17:58:14 GMT
+etag: W/"a8-zhDHs5+7mrjBh8qSfDlDbsWFdWg"
+server: railway-edge
+www-authenticate: Bearer realm="aswe-mcp-writer", resource_metadata="https://asweknowledgeos-production.up.railway.app/.well-known/oauth-protected-resource", error="invalid_token", error_description="OAuth is required for the MCP endpoint."
+x-powered-by: Express
+x-railway-edge: railway/europe-west4-drams3a
+x-railway-request-id: d9NRbHbzR1eC7YB0m3z_FQ

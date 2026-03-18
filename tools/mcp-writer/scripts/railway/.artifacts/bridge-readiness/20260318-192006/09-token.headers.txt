@@ -1,0 +1,10 @@
+cache-control: no-store
+content-length: 1623
+content-type: application/json; charset=utf-8
+date: Wed, 18 Mar 2026 18:20:07 GMT
+etag: W/"657-zES7a0aILwXln1GqhZBzh8kSMKQ"
+pragma: no-cache
+server: railway-edge
+x-powered-by: Express
+x-railway-edge: railway/europe-west4-drams3a
+x-railway-request-id: 26nzczDnStWZO0AMss7a6g

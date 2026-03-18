@@ -26,6 +26,30 @@ function optionalNumber(name, fallback) {
   return parsedValue;
 }
 
+function normalizeAbsoluteUrl(value, sourceLabel) {
+  try {
+    return new URL(String(value || "")).toString();
+  } catch {
+    throw new HttpError(500, `${sourceLabel} must contain only absolute URLs`);
+  }
+}
+
+function optionalAbsoluteUrlList(name) {
+  const rawValue = optional(name, "").trim();
+  if (!rawValue) {
+    return [];
+  }
+
+  const values = rawValue
+    .split(/\r?\n/)
+    .flatMap((line) => line.split(","))
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map((value) => normalizeAbsoluteUrl(value, `Environment variable ${name}`));
+
+  return [...new Set(values)];
+}
+
 function normalizeMultilineSecret(value) {
   const rawValue = String(value || "");
   if (!rawValue) {
@@ -73,6 +97,7 @@ export function loadConfig() {
     },
     oauth: {
       devSubject: optional("OAUTH_DEV_SUBJECT", ""),
+      allowedRedirectUris: optionalAbsoluteUrlList("OAUTH_ALLOWED_REDIRECT_URIS"),
       defaultScope: optional("OAUTH_DEFAULT_SCOPE", "openid mcp"),
       codeTtlSeconds: optionalNumber("OAUTH_CODE_TTL_SECONDS", 600),
       tokenTtlSeconds: optionalNumber("OAUTH_TOKEN_TTL_SECONDS", 3600),

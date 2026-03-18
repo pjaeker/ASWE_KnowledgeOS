@@ -19,6 +19,7 @@ function New-VariableSpec {
     @{ Name = "PORT"; Required = $false },
     @{ Name = "MCP_SHARED_SECRET"; Required = $false },
     @{ Name = "OAUTH_DCR_ENABLED"; Required = $false },
+    @{ Name = "OAUTH_ALLOWED_REDIRECT_URIS"; Required = $false },
     @{ Name = "OAUTH_DEV_SUBJECT"; Required = $false },
     @{ Name = "OAUTH_DEFAULT_SCOPE"; Required = $false },
     @{ Name = "OAUTH_CODE_TTL_SECONDS"; Required = $false },

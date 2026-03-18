@@ -46,6 +46,7 @@ with ChatGPT-compatible discovery and an OAuth-first bootstrap path.
 ## What is intentionally still thin
 
 - Client registrations and authorization codes remain in-memory in this thin-slice baseline.
+- `OAUTH_ALLOWED_REDIRECT_URIS` must be configured before DCR or `/oauth/authorize` will accept redirect URIs.
 - `OAUTH_DEV_SUBJECT` is required before `/oauth/authorize` will issue codes.
 - Legacy `mcp` remains a transitional superset alias for `mcp.read` + `mcp.write`.
 - Legacy `MCP_SHARED_SECRET` remains an optional fallback for non-OAuth clients.
@@ -74,6 +75,7 @@ See `.env.example`.
 
 Key OAuth notes:
 - `PUBLIC_BASE_URL` keeps discovery URLs stable behind Railway.
+- `OAUTH_ALLOWED_REDIRECT_URIS` is a comma- or newline-separated allowlist of absolute callback URLs for DCR and authorization.
 - `OAUTH_DEV_SUBJECT` enables development authorization codes for the thin-slice flow.
 - `OAUTH_JWT_PRIVATE_KEY` is optional; if omitted, the service generates an ephemeral signing key at boot.
 
@@ -149,15 +151,16 @@ curl -X POST https://YOUR-DOMAIN/mcp \
 
 1. Set `PUBLIC_BASE_URL`
 2. Optionally set `OAUTH_JWT_PRIVATE_KEY` for stable JWKS
-3. Set `OAUTH_DEV_SUBJECT` for development authorization codes
-4. Deploy
-5. Hit `GET /healthz`
-6. Hit `GET /.well-known/oauth-protected-resource`
-7. Hit `GET /oauth/.well-known/openid-configuration`
-8. Hit `GET /oauth/.well-known/oauth-authorization-server`
-9. Register a client with `POST /oauth/register`
-10. Request `mcp.read` for read-only use or `mcp.write` for write-capable use
-11. Confirm unauthenticated `POST /mcp` returns `401` + `WWW-Authenticate`
+3. Set `OAUTH_ALLOWED_REDIRECT_URIS` to the exact absolute callback URLs you intend to accept
+4. Set `OAUTH_DEV_SUBJECT` only if you intentionally want development authorization codes
+5. Deploy
+6. Hit `GET /healthz`
+7. Hit `GET /.well-known/oauth-protected-resource`
+8. Hit `GET /oauth/.well-known/openid-configuration`
+9. Hit `GET /oauth/.well-known/oauth-authorization-server`
+10. Register a client with `POST /oauth/register`
+11. Request `mcp.read` for read-only use or `mcp.write` for write-capable use
+12. Confirm unauthenticated `POST /mcp` returns `401` + `WWW-Authenticate`
 
 ## CLI-first Railway workflow
 
@@ -171,16 +174,41 @@ real secrets in repo files.
    `pwsh ./scripts/railway/set_env.ps1 -Service aswe-mcp-writer -Environment production`
 4. Dry-run the deploy command:
    `pwsh ./scripts/railway/deploy.ps1 -Service aswe-mcp-writer -Environment production -DryRun`
-5. Deploy the writer from the repo subdirectory via `railway up ... --path-as-root`:
+5. Deploy the writer from the repo root so Railway can reuse the configured `rootDirectory` and `dockerfilePath`:
    `pwsh ./scripts/railway/deploy.ps1 -Service aswe-mcp-writer -Environment production`
 6. Run discovery and OAuth smoke checks:
    `pwsh ./scripts/railway/smoke_oauth.ps1 -BaseUrl https://YOUR-DOMAIN`
+
+For hosts where Windows PowerShell produces transport false negatives, use the host-neutral Node probe instead:
+`node ./scripts/railway/bridge_readiness_probe.mjs --base-url https://YOUR-DOMAIN`
+
+To prove the full OAuth-to-MCP read path without a browser, add:
+`node ./scripts/railway/bridge_readiness_probe.mjs --base-url https://YOUR-DOMAIN --full-auth --read-smoke`
 
 Useful flags:
 - `-ProbeDcr` also probes `POST /oauth/register`.
 - `-AuthorizationCode`, `-ClientId`, and `-CodeVerifier` let the script exchange a manually obtained code at `/oauth/token`.
 - `-AccessToken -ReadSmoke` lets the script do an authenticated MCP read smoke via `list_tree`.
 - `-PlanOnly` prints the smoke plan without making network calls.
+
+Node probe notes:
+- `--probe-dcr` adds `POST /oauth/register`.
+- `--full-auth` runs DCR, Authorization Code + PKCE, token exchange, and MCP initialize in one host-neutral flow.
+- `--read-smoke` adds an authenticated `list_tree` call after a usable token exists.
+- The probe writes redacted local artifacts under `scripts/railway/.artifacts/bridge-readiness/`.
+- `pwsh ./scripts/railway/doctor_readonly.ps1 -HostNeutralSummaryPath <summary.json>` lets the read-only doctor reuse a fresh host-neutral summary when local PowerShell HTTP is unreliable.
+
+For the next bridge bootstrap check, use the sanitized Railway env inspector:
+`pwsh ./scripts/railway/inspect_bootstrap_readonly.ps1 -EmitJson`
+
+It verifies key bootstrap variables such as `PUBLIC_BASE_URL`, `PORT`, `OAUTH_ALLOWED_REDIRECT_URIS`, and `OAUTH_DEV_SUBJECT` without printing secret values.
+
+`set_env.ps1` now forwards `OAUTH_ALLOWED_REDIRECT_URIS` too, so the CLI upload path matches the stricter OAuth bootstrap contract.
+
+`doctor_readonly.ps1` also reuses that bootstrap inspection and surfaces redirect-allowlist blockers separately from `OAUTH_DEV_SUBJECT`.
+
+For a local OAuth guardrail smoke, run:
+`npm run test:oauth`
 
 For a no-side-effect local rehearsal, run:
 `pwsh ./scripts/dev/pr4_railway_cli_dry_run.ps1 -BaseUrl https://writer.example.com`

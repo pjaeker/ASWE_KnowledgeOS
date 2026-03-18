@@ -1,0 +1,1 @@
+{"resource":"https://asweknowledgeos-production.up.railway.app/mcp","resource_name":"ASWE MCP Writer","authorization_servers":["https://asweknowledgeos-production.up.railway.app/oauth"],"bearer_methods_supported":["header"]}

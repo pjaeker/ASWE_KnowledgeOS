@@ -406,20 +406,21 @@ Deployment, Variablenpflege und Smoke-Tests moeglichst ohne Dashboard-Klicks rep
 
 - Railway CLI bevorzugen
 - Variablen nur per stdin oder Environment verarbeiten
-- Deploy via Subdirectory / path-as-root vorbereiten
+- Deploy vom Repo-Root aus vorbereiten, damit Railway die bestehende `rootDirectory`-/`dockerfilePath`-Konfiguration weiter korrekt aufloest
 - Smoke-Skripte fuer:
   - Protected Resource Metadata
   - OIDC Metadata
   - optional DCR
   - Token Flow / Read Smoke
+- host-neutralen Node-Fallback fuer Windows-/PowerShell-Transportprobleme vorsehen
 - README dokumentiert den CLI-first Ablauf knapp
 
 ## DoD
 
 1. `set_env.sh` oder aequivalent dokumentiert variable set via CLI
-2. `deploy.sh` oder aequivalent dokumentiert Railway-Deploy via Subdirectory
+2. `deploy.sh` oder aequivalent dokumentiert Railway-Deploy vom Repo-Root
 3. `smoke_oauth.sh` oder aequivalent prueft die wichtigsten Endpunkte
-4. README erklaert den CLI-first Ablauf nachvollziehbar
+4. README erklaert den CLI-first Ablauf und den host-neutralen Node-Fallback nachvollziehbar
 5. keine Secrets im Repo, keine Copy/Paste von echten Werten
 
 ## Verify
@@ -446,7 +447,7 @@ Nachweisen, dass ChatGPT die Bridge als Custom App nutzen kann, ohne Governance 
 ## Schritte
 
 1. ChatGPT Custom App gegen den Railway-Endpoint erneut anlegen
-2. Discovery pruefen
+2. Discovery pruefen; bei lokal fragiler PowerShell zuerst host-neutralen Bridge-Readiness-Probe-Lauf fuer `/.well-known/*`, `/oauth/*`, `401 + WWW-Authenticate` und optional `list_tree` sichern
 3. ersten Read-Call durchfuehren: `list_tree` oder `read_file`
 4. optional kleinen Draft-PR auf erlaubtem Pfad pruefen
 5. Policy-Negativfall gegen blockierten Pfad pruefen
