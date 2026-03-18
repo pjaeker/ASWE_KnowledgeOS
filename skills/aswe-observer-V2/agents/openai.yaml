@@ -1,0 +1,12 @@
+interface:
+  display_name: ASWE Observer
+  short_description: Read-only observer for runtime, service, and log evidence
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  allow_implicit_invocation: true
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas

@@ -1,0 +1,12 @@
+interface:
+  display_name: ASWE Doc Agent
+  short_description: Anchor-first wording specialist for confirmed documentation follow-through
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  allow_implicit_invocation: true
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas

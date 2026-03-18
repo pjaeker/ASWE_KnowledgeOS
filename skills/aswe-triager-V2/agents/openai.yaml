@@ -1,0 +1,12 @@
+interface:
+  display_name: ASWE Triager
+  short_description: Anchor-first triager for competing hypotheses, dead ends, and next probes
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  allow_implicit_invocation: true
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas

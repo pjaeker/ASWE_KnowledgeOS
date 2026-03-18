@@ -1,0 +1,9 @@
+interface:
+  display_name: ASWE Session Closeout Guardrails
+  short_description: Close out ASWE repo sessions with fresh evidence, artifact decisions, and bounded-role-safe next-start guidance
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  allow_implicit_invocation: true
+  products:
+  - chatgpt
