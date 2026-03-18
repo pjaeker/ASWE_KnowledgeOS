@@ -44,7 +44,7 @@
 
 .PARAMETER CodexConfigSource
   Quelle fuer Codex-Konfiguration:
-  - auto: zuerst Repo (codex.toml), dann User (~/.codex/config.toml)
+  - auto: zuerst Repo (.codex/config.toml), dann User (~/.codex/config.toml)
   - repo: nur Repo-Datei
   - user: nur User-Datei
   - none: deaktiviert das Einlesen
@@ -357,7 +357,7 @@ function Resolve-CodexConfigFile([string]$repoRoot, [string]$sourceMode, [string
     Add-CodexCandidate $candidates $seen "explicit" $explicitPath
   }
 
-  $repoPath = Join-Path $repoRoot "codex.toml"
+  $repoPath = Join-Path $repoRoot ".codex\config.toml"
   $userPath = $null
   if ($env:USERPROFILE) { $userPath = Join-Path $env:USERPROFILE ".codex\config.toml" }
 

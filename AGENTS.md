@@ -76,8 +76,16 @@ Sofort anhalten bei:
 
 ## Codex-Konfiguration
 
-Repo-lokale Defaults liegen in `codex.toml`.
-Der bestehende ToolingSnapshot-Exporter kann diese Datei als safe subset lesen.
+Die kanonische Repo-Konfiguration fuer Codex liegt in:
+
+- `.codex/config.toml`
+
+Die fruehere Root-Datei `codex.toml` wurde entfernt, um doppelte Quellen und Prioritaetskonflikte zu vermeiden.
+
+Hinweise:
+- Teamweite Runtime-Defaults liegen ausschliesslich in `.codex/config.toml`.
+- Lokale Trust-Einstellungen bleiben benutzerspezifisch und werden nicht ins Repo committed.
+- Railway-/Diagnose-Skripte sollen sich an der Repo-Konfiguration unter `.codex/config.toml` orientieren.
 
 ## Erwartete Outputs pro Slice
 

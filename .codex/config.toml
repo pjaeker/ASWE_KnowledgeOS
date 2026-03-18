@@ -1,14 +1,9 @@
-# Repo-lokale native Codex-Subagent-Konfiguration fuer ASWE_KnowledgeOS.
-# Diese Datei ergaenzt die bereits vorhandene projektbezogene Trust-Zeile um
-# einen [agents]-Block. Dadurch bleibt die bisherige Trust-Konfiguration erhalten.
-# WICHTIG: Falls dein lokaler Repo-Pfad nicht diesem Windows-Pfad entspricht,
-# passe die projects-Zeile nach dem Entzippen an.
-
-[projects."g:/Program Files (x86)/GitHub/Repositories/ASWE_KnowledgeOS"]
-trust_level = "trusted"
+# Kanonische Repo-Codex-Konfiguration fuer ASWE_KnowledgeOS.
+# Teamweit committen. Trust bleibt lokal/user-spezifisch.
 
 approval_policy = "never"
 sandbox_mode = "workspace-write"
+web_search = "disabled"
 
 [sandbox_workspace_write]
 network_access = true

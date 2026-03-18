@@ -1,6 +1,0 @@
-# Repo-lokale Codex-Defaults fuer ASWE_KnowledgeOS
-# Safe subset fuer ToolingSnapshot und reproduzierbare lokale Runs.
-
-approval_policy = "never"
-sandbox_mode = "workspace-write"
-web_search = "disabled"
