@@ -1,0 +1,8 @@
+interface:
+  display_name: ASWE Repo Session Guardrails
+  short_description: Initialize ASWE sessions with a symmetric contract and guarded
+    freshness checks
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  allow_implicit_invocation: true
