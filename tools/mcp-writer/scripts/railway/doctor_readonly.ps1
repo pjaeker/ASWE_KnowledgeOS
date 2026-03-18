@@ -16,6 +16,8 @@ $scriptRoot = if ($PSScriptRoot) {
 }
 
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $scriptRoot "..\..\..\.."))
+. (Join-Path $scriptRoot "railway_env_common.ps1")
+Ensure-SystemNetHttp
 
 function Resolve-RepoPath {
   param(
@@ -55,7 +57,7 @@ function ConvertFrom-JsonSafe {
   }
 
   try {
-    return $Text | ConvertFrom-Json -Depth 20
+    return ConvertFrom-JsonCompat -Text $Text
   } catch {
     return $null
   }
@@ -80,7 +82,7 @@ function Load-TargetConfig {
     throw "Railway target config not found: $Path"
   }
 
-  $config = Get-Content -Raw -Path $Path | ConvertFrom-Json -Depth 20
+  $config = ConvertFrom-JsonCompat -Text (Get-Content -Raw -Path $Path)
 
   foreach ($name in @("project", "service", "environment", "baseUrl", "writerPath")) {
     $value = $config.$name
@@ -137,10 +139,6 @@ function Get-RailwayContextArguments {
 
   $arguments = @()
 
-  if ($Target.project) {
-    $arguments += @("--project", [string]$Target.project)
-  }
-
   if ($Target.environment) {
     $arguments += @("--environment", [string]$Target.environment)
   }
@@ -150,6 +148,15 @@ function Get-RailwayContextArguments {
   }
 
   return $arguments
+}
+
+function Get-RailwayStatusArguments {
+  param(
+    [Parameter(Mandatory = $true)]
+    [pscustomobject]$Target
+  )
+
+  return @("service", "status", "--json") + (Get-RailwayContextArguments -Target $Target)
 }
 
 function Invoke-CapturedCommand {
@@ -512,6 +519,7 @@ $target = Load-TargetConfig -Path $resolvedTargetPath
 $resolvedWriterPath = Resolve-RepoPath -Path ([string]$target.writerPath)
 $railwayCommandPath = Get-CommandPathSafe -Name $RailwayBin
 $contextArguments = Get-RailwayContextArguments -Target $target
+$envReport = Import-RailwaySecretFallback -RepoRoot $repoRoot
 
 Write-Section "Target"
 Write-Host ("Target config: {0}" -f $resolvedTargetPath)
@@ -533,6 +541,13 @@ if ($null -ne $target.PSObject.Properties["observedListenPort"]) {
   Write-Host ("Observed listen port: {0}" -f $target.observedListenPort)
 }
 
+Write-Section "Secret fallback"
+Write-Host ("Env source: {0}" -f $(if ($envReport.envSource) { $envReport.envSource } else { "none" }))
+Write-Host ("Auth variable: {0}" -f $(if ($envReport.authVariableAfter) { $envReport.authVariableAfter } else { "none" }))
+if ($envReport.loadedEnvPath) {
+  Write-Host ("Loaded env path: {0}" -f $envReport.loadedEnvPath)
+}
+
 Write-Section "CLI preflight"
 if (-not $railwayCommandPath) {
   Write-Host ("Railway CLI not found on PATH for '{0}'." -f $RailwayBin)
@@ -546,7 +561,7 @@ if (-not $railwayCommandPath) {
   if (-not $whoamiResult.Success) {
     Write-Host "whoami is optional here and remains non-fatal when project-scoped Railway tokens already allow status/log access."
   }
-  $statusResult = Invoke-CapturedCommand -Label "status" -Executable $railwayCommandPath -Arguments (@("status", "--json") + $contextArguments) -ParseJson -EchoOutput
+  $statusResult = Invoke-CapturedCommand -Label "status" -Executable $railwayCommandPath -Arguments (Get-RailwayStatusArguments -Target $target) -ParseJson -EchoOutput
 }
 
 Write-Section "Health"
@@ -604,7 +619,7 @@ $smokePlan = Invoke-RepoScriptIfPresent -Label "smoke plan" -RelativePath "tools
 
 Write-Section "Prepared read-only Railway commands"
 $preparedCommands = @(
-  (Join-CommandPreview -Binary $RailwayBin -Arguments (@("status", "--json") + $contextArguments)),
+  (Join-CommandPreview -Binary $RailwayBin -Arguments (Get-RailwayStatusArguments -Target $target)),
   (Join-CommandPreview -Binary $RailwayBin -Arguments (@("deployment", "list", "--limit", "10", "--json") + $contextArguments)),
   (Join-CommandPreview -Binary $RailwayBin -Arguments (@("logs", "--lines", "200", "--json") + $contextArguments)),
   (Join-CommandPreview -Binary $RailwayBin -Arguments (@("logs", "--build", "--lines", "200", "--json") + $contextArguments))

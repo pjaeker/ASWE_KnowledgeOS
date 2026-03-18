@@ -25,6 +25,8 @@ $scriptRoot = if ($PSScriptRoot) {
 }
 
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $scriptRoot "..\..\..\.."))
+. (Join-Path $scriptRoot "railway_env_common.ps1")
+Ensure-SystemNetHttp
 
 function Resolve-RepoPath {
   param(
@@ -64,7 +66,7 @@ function ConvertFrom-JsonSafe {
   }
 
   try {
-    return $Text | ConvertFrom-Json -Depth 20
+    return ConvertFrom-JsonCompat -Text $Text
   } catch {
     return $null
   }
@@ -89,7 +91,7 @@ function Load-TargetConfig {
     throw "Railway target config not found: $Path"
   }
 
-  $config = Get-Content -Raw -Path $Path | ConvertFrom-Json -Depth 20
+  $config = ConvertFrom-JsonCompat -Text (Get-Content -Raw -Path $Path)
 
   foreach ($name in @("project", "service", "environment", "baseUrl", "writerPath")) {
     $value = $config.$name
@@ -146,10 +148,6 @@ function Get-RailwayContextArguments {
 
   $arguments = @()
 
-  if ($Target.project) {
-    $arguments += @("--project", [string]$Target.project)
-  }
-
   if ($Target.environment) {
     $arguments += @("--environment", [string]$Target.environment)
   }
@@ -159,6 +157,15 @@ function Get-RailwayContextArguments {
   }
 
   return $arguments
+}
+
+function Get-RailwayStatusArguments {
+  param(
+    [Parameter(Mandatory = $true)]
+    [pscustomobject]$Target
+  )
+
+  return @("service", "status", "--json") + (Get-RailwayContextArguments -Target $Target)
 }
 
 function Invoke-CapturedCommand {
@@ -437,6 +444,7 @@ $resolvedTargetPath = Resolve-RepoPath -Path $TargetConfigPath
 $target = Load-TargetConfig -Path $resolvedTargetPath
 $contextArguments = Get-RailwayContextArguments -Target $target
 $railwayCommandPath = Get-CommandPathSafe -Name $RailwayBin
+$envReport = Import-RailwaySecretFallback -RepoRoot $repoRoot
 
 Write-Section "Target"
 Write-Host ("Target config: {0}" -f $resolvedTargetPath)
@@ -450,6 +458,11 @@ if ($null -ne $target.PSObject.Properties["targetPort"]) {
 }
 if ($null -ne $target.PSObject.Properties["observedListenPort"]) {
   Write-Host ("Observed listen port: {0}" -f $target.observedListenPort)
+}
+Write-Host ("Env source: {0}" -f $(if ($envReport.envSource) { $envReport.envSource } else { "none" }))
+Write-Host ("Auth variable: {0}" -f $(if ($envReport.authVariableAfter) { $envReport.authVariableAfter } else { "none" }))
+if ($envReport.loadedEnvPath) {
+  Write-Host ("Loaded env path: {0}" -f $envReport.loadedEnvPath)
 }
 Write-Host ("Doctor gate: {0}" -f ($(if ($RequireHealthyDoctor) { "run + require pass" } elseif ($RunDoctorFirst) { "run only" } else { "disabled" })))
 Write-Host ("Smoke after health ok: {0}" -f ($(if ($RunSmokeAfterHealthOk) { "enabled" } else { "disabled" })))
@@ -469,7 +482,7 @@ $whoamiResult = Invoke-CapturedCommand -Label "whoami (optional)" -Executable $r
 if (-not $whoamiResult.Success) {
   Write-Host "whoami is optional here and remains non-fatal when project-scoped Railway tokens already allow status/log access."
 }
-$statusBefore = Invoke-RequiredRailwayCommand -Label "status before" -Executable $railwayCommandPath -Arguments (@("status", "--json") + $contextArguments) -ParseJson -EchoOutput
+$statusBefore = Invoke-RequiredRailwayCommand -Label "status before" -Executable $railwayCommandPath -Arguments (Get-RailwayStatusArguments -Target $target) -ParseJson -EchoOutput
 
 if ($RunDoctorFirst) {
   Write-Section "Doctor gate"
@@ -507,7 +520,7 @@ Write-Host ("Executing mutation: {0}" -f (Join-CommandPreview -Binary $RailwayBi
 $mutationResult = Invoke-RequiredRailwayCommand -Label $Action.ToLowerInvariant() -Executable $railwayCommandPath -Arguments $mutationArguments -EchoOutput
 
 Write-Section "Read-back"
-$statusAfter = Invoke-RequiredRailwayCommand -Label "status after" -Executable $railwayCommandPath -Arguments (@("status", "--json") + $contextArguments) -ParseJson -EchoOutput
+$statusAfter = Invoke-RequiredRailwayCommand -Label "status after" -Executable $railwayCommandPath -Arguments (Get-RailwayStatusArguments -Target $target) -ParseJson -EchoOutput
 $runtimeLogs = Invoke-LogSummary -Label "runtime logs" -Executable $railwayCommandPath -Arguments (@("logs", "--lines", "200", "--json") + $contextArguments)
 
 $buildLogs = $null

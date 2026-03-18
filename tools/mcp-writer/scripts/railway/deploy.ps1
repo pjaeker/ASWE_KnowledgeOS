@@ -3,6 +3,7 @@ param(
   [string]$Service = "",
   [string]$Environment = "",
   [string]$WriterPath = "tools/mcp-writer",
+  [string]$Message = "fix(writer): align runtime port with Railway target port",
   [switch]$Detach,
   [switch]$DryRun
 )
@@ -25,7 +26,9 @@ if (-not (Test-Path -LiteralPath $resolvedWriterPath)) {
   throw "Writer path not found: $resolvedWriterPath"
 }
 
-$arguments = @("up", $WriterPath, "--path-as-root")
+# Keep the repo root as upload context so the existing Railway service
+# config can continue to resolve rootDirectory + Dockerfile path correctly.
+$arguments = @("up")
 
 if ($Service) {
   $arguments += @("--service", $Service)
@@ -37,6 +40,10 @@ if ($Environment) {
 
 if ($Detach) {
   $arguments += "--detach"
+}
+
+if ($Message) {
+  $arguments += @("-m", $Message)
 }
 
 if ($DryRun) {

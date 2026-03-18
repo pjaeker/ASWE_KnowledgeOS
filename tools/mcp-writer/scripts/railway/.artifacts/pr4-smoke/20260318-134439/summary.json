@@ -1,0 +1,92 @@
+﻿{
+    "baseUrl":  "https://asweknowledgeos-production.up.railway.app",
+    "outDir":  "C:\\Users\\PJ\\.codex\\worktrees\\a302\\ASWE_KnowledgeOS\\tools\\mcp-writer\\scripts\\railway\\.artifacts\\pr4-smoke\\20260318-134439",
+    "passed":  0,
+    "failed":  6,
+    "results":  [
+                    {
+                        "name":  "healthz",
+                        "required":  true,
+                        "method":  "GET",
+                        "url":  "https://asweknowledgeos-production.up.railway.app/healthz",
+                        "expectedStatus":  [
+                                               200
+                                           ],
+                        "status":  null,
+                        "passed":  false,
+                        "notes":  [
+                                      "Request failed: Ausnahme beim Aufrufen von \"GetResult\" mit 0 Argument(en):  \"Fehler beim Senden der Anforderung.\" :: Fehler beim Senden der Anforderung."
+                                  ]
+                    },
+                    {
+                        "name":  "protected-resource",
+                        "required":  true,
+                        "method":  "GET",
+                        "url":  "https://asweknowledgeos-production.up.railway.app/.well-known/oauth-protected-resource",
+                        "expectedStatus":  [
+                                               200
+                                           ],
+                        "status":  null,
+                        "passed":  false,
+                        "notes":  [
+                                      "Request failed: Ausnahme beim Aufrufen von \"GetResult\" mit 0 Argument(en):  \"Fehler beim Senden der Anforderung.\" :: Fehler beim Senden der Anforderung."
+                                  ]
+                    },
+                    {
+                        "name":  "openid-configuration",
+                        "required":  true,
+                        "method":  "GET",
+                        "url":  "https://asweknowledgeos-production.up.railway.app/oauth/.well-known/openid-configuration",
+                        "expectedStatus":  [
+                                               200
+                                           ],
+                        "status":  null,
+                        "passed":  false,
+                        "notes":  [
+                                      "Request failed: Ausnahme beim Aufrufen von \"GetResult\" mit 0 Argument(en):  \"Fehler beim Senden der Anforderung.\" :: Fehler beim Senden der Anforderung."
+                                  ]
+                    },
+                    {
+                        "name":  "oauth-authorization-server",
+                        "required":  true,
+                        "method":  "GET",
+                        "url":  "https://asweknowledgeos-production.up.railway.app/oauth/.well-known/oauth-authorization-server",
+                        "expectedStatus":  [
+                                               200
+                                           ],
+                        "status":  null,
+                        "passed":  false,
+                        "notes":  [
+                                      "Request failed: Ausnahme beim Aufrufen von \"GetResult\" mit 0 Argument(en):  \"Fehler beim Senden der Anforderung.\" :: Fehler beim Senden der Anforderung."
+                                  ]
+                    },
+                    {
+                        "name":  "jwks",
+                        "required":  true,
+                        "method":  "GET",
+                        "url":  "https://asweknowledgeos-production.up.railway.app/oauth/jwks",
+                        "expectedStatus":  [
+                                               200
+                                           ],
+                        "status":  null,
+                        "passed":  false,
+                        "notes":  [
+                                      "Request failed: Ausnahme beim Aufrufen von \"GetResult\" mit 0 Argument(en):  \"Fehler beim Senden der Anforderung.\" :: Fehler beim Senden der Anforderung."
+                                  ]
+                    },
+                    {
+                        "name":  "mcp-missing-token",
+                        "required":  true,
+                        "method":  "POST",
+                        "url":  "https://asweknowledgeos-production.up.railway.app/mcp",
+                        "expectedStatus":  [
+                                               401
+                                           ],
+                        "status":  null,
+                        "passed":  false,
+                        "notes":  [
+                                      "Request failed: Ausnahme beim Aufrufen von \"GetResult\" mit 0 Argument(en):  \"Fehler beim Senden der Anforderung.\" :: Fehler beim Senden der Anforderung."
+                                  ]
+                    }
+                ]
+}

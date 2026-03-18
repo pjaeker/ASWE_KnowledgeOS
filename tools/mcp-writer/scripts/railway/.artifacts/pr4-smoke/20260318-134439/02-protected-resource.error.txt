@@ -1,0 +1,1 @@
+﻿Ausnahme beim Aufrufen von "GetResult" mit 0 Argument(en):  "Fehler beim Senden der Anforderung." :: Fehler beim Senden der Anforderung.

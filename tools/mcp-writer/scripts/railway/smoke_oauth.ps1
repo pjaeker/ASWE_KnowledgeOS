@@ -24,6 +24,17 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+$scriptRoot = if ($PSScriptRoot) {
+  $PSScriptRoot
+} elseif ($PSCommandPath) {
+  Split-Path -Parent $PSCommandPath
+} else {
+  (Get-Location).Path
+}
+
+. (Join-Path $scriptRoot "railway_env_common.ps1")
+Ensure-SystemNetHttp
+
 function Join-Url {
   param(
     [Parameter(Mandatory = $true)]
@@ -92,7 +103,7 @@ function Parse-JsonSafely {
   }
 
   try {
-    return $Body | ConvertFrom-Json -Depth 20
+    return ConvertFrom-JsonCompat -Text $Body
   } catch {
     return $null
   }
@@ -128,6 +139,20 @@ function Invoke-Probe {
     [scriptblock]$Assertion
   )
 
+  $request = $null
+  $response = $null
+  $prefix = "{0:D2}-{1}" -f $Index, $Name
+  $result = [ordered]@{
+    name = $Name
+    required = [bool]$Required
+    method = $Method
+    url = $Url
+    expectedStatus = $ExpectedStatus
+    status = $null
+    passed = $false
+    notes = @()
+  }
+
   $request = [System.Net.Http.HttpRequestMessage]::new(
     [System.Net.Http.HttpMethod]::new($Method),
     $Url
@@ -141,59 +166,59 @@ function Invoke-Probe {
     $request.Content = [System.Net.Http.StringContent]::new($Body, [System.Text.Encoding]::UTF8, "application/json")
   }
 
-  $response = $Client.SendAsync($request).GetAwaiter().GetResult()
-  $responseBody = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
-  $headerMap = Get-HeaderMap -Response $response
-  $jsonBody = Parse-JsonSafely -Body $responseBody
-  $statusCode = [int]$response.StatusCode
-  $prefix = "{0:D2}-{1}" -f $Index, $Name
-
-  Save-Text -Path (Join-Path $script:OutDir "$prefix.status.txt") -Value $statusCode
-  Save-Text -Path (Join-Path $script:OutDir "$prefix.headers.txt") -Value (($headerMap.GetEnumerator() | ForEach-Object {
-        "{0}: {1}" -f $_.Key, $_.Value
-      }) -join [Environment]::NewLine)
-  Save-Text -Path (Join-Path $script:OutDir "$prefix.body.txt") -Value $responseBody
-
-  $result = [ordered]@{
-    name = $Name
-    required = [bool]$Required
-    method = $Method
-    url = $Url
-    expectedStatus = $ExpectedStatus
-    status = $statusCode
-    passed = $false
-    notes = @()
-  }
-
-  if ($ExpectedStatus.Count -gt 0 -and -not $ExpectedStatus.Contains($statusCode)) {
-    $result.notes += "Expected HTTP status in [$($ExpectedStatus -join ', ')], got $statusCode."
-  }
-
   try {
-    $assertionNotes = & $Assertion $response $headerMap $responseBody $jsonBody
-  } catch {
-    $result.notes += 'Assertion failed: ' + $_.Exception.Message
-    $assertionNotes = @()
-  }
+    $response = $Client.SendAsync($request).GetAwaiter().GetResult()
+    $responseBody = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+    $headerMap = Get-HeaderMap -Response $response
+    $jsonBody = Parse-JsonSafely -Body $responseBody
+    $statusCode = [int]$response.StatusCode
+    $result.status = $statusCode
 
-  if ($assertionNotes -is [System.Array]) {
-    $result.notes += $assertionNotes
-  } elseif ($assertionNotes) {
-    $result.notes += [string]$assertionNotes
+    Save-Text -Path (Join-Path $script:OutDir "$prefix.status.txt") -Value $statusCode
+    Save-Text -Path (Join-Path $script:OutDir "$prefix.headers.txt") -Value (($headerMap.GetEnumerator() | ForEach-Object {
+          "{0}: {1}" -f $_.Key, $_.Value
+        }) -join [Environment]::NewLine)
+    Save-Text -Path (Join-Path $script:OutDir "$prefix.body.txt") -Value $responseBody
+
+    if ($ExpectedStatus.Count -gt 0 -and -not $ExpectedStatus.Contains($statusCode)) {
+      $result.notes += "Expected HTTP status in [$($ExpectedStatus -join ', ')], got $statusCode."
+    }
+
+    try {
+      $assertionNotes = & $Assertion $response $headerMap $responseBody $jsonBody
+    } catch {
+      $result.notes += 'Assertion failed: ' + $_.Exception.Message
+      $assertionNotes = @()
+    }
+
+    if ($assertionNotes -is [System.Array]) {
+      $result.notes += $assertionNotes
+    } elseif ($assertionNotes) {
+      $result.notes += [string]$assertionNotes
+    }
+  } catch {
+    $message = $_.Exception.Message
+    if ($_.Exception.InnerException) {
+      $message = "{0} :: {1}" -f $message, $_.Exception.InnerException.Message
+    }
+
+    Save-Text -Path (Join-Path $script:OutDir "$prefix.status.txt") -Value "REQUEST_ERROR"
+    Save-Text -Path (Join-Path $script:OutDir "$prefix.headers.txt") -Value ""
+    Save-Text -Path (Join-Path $script:OutDir "$prefix.body.txt") -Value ""
+    Save-Text -Path (Join-Path $script:OutDir "$prefix.error.txt") -Value $message
+    $result.notes += "Request failed: $message"
+  } finally {
+    if ($null -ne $response) {
+      $response.Dispose()
+    }
+
+    if ($null -ne $request) {
+      $request.Dispose()
+    }
   }
 
   $result.passed = ($result.notes.Count -eq 0)
-  $response.Dispose()
-  $request.Dispose()
   return $result
-}
-
-$scriptRoot = if ($PSScriptRoot) {
-  $PSScriptRoot
-} elseif ($PSCommandPath) {
-  Split-Path -Parent $PSCommandPath
-} else {
-  (Get-Location).Path
 }
 
 if (-not $OutDir) {
