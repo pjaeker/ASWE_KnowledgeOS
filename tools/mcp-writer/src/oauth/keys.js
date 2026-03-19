@@ -25,11 +25,20 @@ function exportPublicKeyPem(keyObject) {
 }
 
 export function createSigningKeyMaterial(config) {
+  const oauthJwtPrivateKey = String(config.oauth?.jwtPrivateKey || "").trim();
+  const githubPrivateKey = String(config.github?.privateKey || "").trim();
   let privateKeyObject;
   let publicKeyObject;
+  let source = "generated_ephemeral";
 
-  if (config.oauth.jwtPrivateKey) {
-    privateKeyObject = crypto.createPrivateKey(config.oauth.jwtPrivateKey);
+  if (oauthJwtPrivateKey) {
+    privateKeyObject = crypto.createPrivateKey(oauthJwtPrivateKey);
+    source = "oauth_jwt_private_key";
+    publicKeyObject = crypto.createPublicKey(privateKeyObject);
+  } else if (githubPrivateKey) {
+    // Reuse the existing stable GitHub App key when no dedicated OAuth key is configured.
+    privateKeyObject = crypto.createPrivateKey(githubPrivateKey);
+    source = "github_private_key_fallback";
     publicKeyObject = crypto.createPublicKey(privateKeyObject);
   } else {
     const generatedPair = crypto.generateKeyPairSync("rsa", {
@@ -46,6 +55,7 @@ export function createSigningKeyMaterial(config) {
   return {
     algorithm: "RS256",
     kid,
+    source,
     privateKeyPem: exportPrivateKeyPem(privateKeyObject),
     publicKeyPem: exportPublicKeyPem(publicKeyObject),
     jwks: {
@@ -68,17 +78,27 @@ export function signJwt({
   audience,
   subject,
   expiresIn,
-  header = {}
+  header = {},
+  noTimestamp = false
 }) {
-  return jwt.sign(payload, keyMaterial.privateKeyPem, {
+  const signOptions = {
     algorithm: keyMaterial.algorithm,
     keyid: keyMaterial.kid,
     issuer,
     audience,
-    subject,
-    expiresIn,
-    header
-  });
+    header,
+    noTimestamp
+  };
+
+  if (subject) {
+    signOptions.subject = subject;
+  }
+
+  if (expiresIn !== undefined && expiresIn !== null && expiresIn !== "") {
+    signOptions.expiresIn = expiresIn;
+  }
+
+  return jwt.sign(payload, keyMaterial.privateKeyPem, signOptions);
 }
 
 export function verifyJwt({ token, keyMaterial, issuer, audience }) {

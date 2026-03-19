@@ -257,7 +257,11 @@ $summary = [ordered]@{
     cliPresent = [bool]$railwayCommandPath
     variableListOk = $false
     authorizeBootstrapReady = $false
+    stableSigningReady = $false
+    signingIdentitySource = "none"
+    restartSafeBootstrapReady = $false
     blockers = @()
+    warnings = @()
   }
   requestedRedirect = [ordered]@{
     requested = [string]$RedirectUri
@@ -326,6 +330,17 @@ if (-not $railwayCommandPath) {
       $summary.inspection.blockers += "OAUTH_DEV_SUBJECT is missing or empty; authorization code bootstrap is blocked."
     }
 
+    if ($summary.variables.OAUTH_JWT_PRIVATE_KEY.nonEmpty) {
+      $summary.inspection.stableSigningReady = $true
+      $summary.inspection.signingIdentitySource = "OAUTH_JWT_PRIVATE_KEY"
+    } elseif ($summary.variables.GITHUB_PRIVATE_KEY.nonEmpty) {
+      $summary.inspection.stableSigningReady = $true
+      $summary.inspection.signingIdentitySource = "GITHUB_PRIVATE_KEY fallback"
+      $summary.inspection.warnings += "OAUTH_JWT_PRIVATE_KEY is missing or empty; OAuth signing will fall back to GITHUB_PRIVATE_KEY. This is restart-stable, but a dedicated OAuth key remains the cleaner later hardening path."
+    } else {
+      $summary.inspection.warnings += "Neither OAUTH_JWT_PRIVATE_KEY nor GITHUB_PRIVATE_KEY is available; JWT/JWKS identity and stateless OAuth bootstrap artifacts will rotate across restarts."
+    }
+
     $summary.inspection.authorizeBootstrapReady = (
       $summary.variables.PUBLIC_BASE_URL.matchesExpected -and
       $summary.variables.PORT.matchesExpected -and
@@ -335,6 +350,10 @@ if (-not $railwayCommandPath) {
         (-not $summary.requestedRedirect.provided) -or
         $summary.requestedRedirect.exactMatch
       )
+    )
+    $summary.inspection.restartSafeBootstrapReady = (
+      $summary.inspection.authorizeBootstrapReady -and
+      $summary.inspection.stableSigningReady
     )
   }
 }
@@ -347,6 +366,9 @@ if ($EmitJson) {
   Write-Host ("CLI present: {0}" -f $summary.inspection.cliPresent)
   Write-Host ("Variable list ok: {0}" -f $summary.inspection.variableListOk)
   Write-Host ("Authorize bootstrap ready: {0}" -f $summary.inspection.authorizeBootstrapReady)
+  Write-Host ("Stable signing ready: {0}" -f $summary.inspection.stableSigningReady)
+  Write-Host ("Signing identity source: {0}" -f $summary.inspection.signingIdentitySource)
+  Write-Host ("Restart-safe bootstrap ready: {0}" -f $summary.inspection.restartSafeBootstrapReady)
   Write-Host ("PUBLIC_BASE_URL: {0}" -f $summary.variables.PUBLIC_BASE_URL.status)
   Write-Host ("PORT: {0}" -f $summary.variables.PORT.status)
   Write-Host ("NODE_ENV: {0}" -f $summary.variables.NODE_ENV.status)
@@ -369,6 +391,10 @@ if ($EmitJson) {
 
   foreach ($blocker in @($summary.inspection.blockers)) {
     Write-Host ("Blocker: {0}" -f $blocker)
+  }
+
+  foreach ($warning in @($summary.inspection.warnings)) {
+    Write-Host ("Warning: {0}" -f $warning)
   }
 }
 
