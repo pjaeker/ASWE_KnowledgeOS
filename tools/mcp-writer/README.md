@@ -45,12 +45,12 @@ with ChatGPT-compatible discovery and an OAuth-first bootstrap path.
 
 ## What is intentionally still thin
 
-- Client registrations and authorization codes remain in-memory in this thin-slice baseline.
+- There is still no external OAuth persistence layer; instead, client registrations and authorization codes are carried as signed bootstrap artifacts so they survive deploys and restarts as long as the signing identity stays stable.
 - `OAUTH_ALLOWED_REDIRECT_URIS` must be configured before DCR or `/oauth/authorize` will accept redirect URIs.
 - `OAUTH_DEV_SUBJECT` is required before `/oauth/authorize` will issue codes.
 - Legacy `mcp` remains a transitional superset alias for `mcp.read` + `mcp.write`.
 - Legacy `MCP_SHARED_SECRET` remains an optional fallback for non-OAuth clients.
-- No persistence layer.
+- Authorization-code replay protection remains exact within a live process; cross-restart one-time enforcement would still require an external persistence layer.
 
 ## Deploy on Railway
 
@@ -77,8 +77,8 @@ Key OAuth notes:
 - `PUBLIC_BASE_URL` keeps discovery URLs stable behind Railway.
 - `OAUTH_ALLOWED_REDIRECT_URIS` is a comma- or newline-separated allowlist of exact absolute callback URLs for DCR and authorization. Do not use wildcards or host-only patterns.
 - `OAUTH_DEV_SUBJECT` enables development authorization codes for the thin-slice flow and is required before `/oauth/authorize` will issue codes.
-- A successful DCR response registers a public client with `token_endpoint_auth_method=none`, which can also be reused through ChatGPT's static custom OAuth client path while the thin-slice server process remains live.
-- `OAUTH_JWT_PRIVATE_KEY` is optional; if omitted, the service generates an ephemeral signing key at boot.
+- A successful DCR response registers a public client with `token_endpoint_auth_method=none`, and that `client_id` can be reused through ChatGPT's static custom OAuth client path across deploys and restarts while the signing identity stays stable.
+- `OAUTH_JWT_PRIVATE_KEY` is optional. If it is unset, OAuth signing falls back to `GITHUB_PRIVATE_KEY`, which keeps the bootstrap path restart-stable without introducing a second production secret. A dedicated OAuth key is still the cleaner later hardening path if you want to decouple GitHub App and OAuth identities.
 
 ## AuthN / AuthZ / Policy
 
@@ -151,7 +151,7 @@ curl -X POST https://YOUR-DOMAIN/mcp \
 ## Recommended first deployment sequence
 
 1. Set `PUBLIC_BASE_URL`
-2. Optionally set `OAUTH_JWT_PRIVATE_KEY` for stable JWKS
+2. Optionally set `OAUTH_JWT_PRIVATE_KEY` to decouple OAuth signing from the GitHub App key
 3. Set `OAUTH_ALLOWED_REDIRECT_URIS` to the exact absolute callback URLs you intend to accept
 4. Set `OAUTH_DEV_SUBJECT` only if you intentionally want development authorization codes
 5. Deploy
@@ -194,7 +194,8 @@ Useful flags:
 
 Node probe notes:
 - `--probe-dcr` adds `POST /oauth/register`.
-- `--full-auth` runs DCR, Authorization Code + PKCE, token exchange, and MCP initialize in one host-neutral flow.
+- `--full-auth` runs Authorization Code + PKCE, token exchange, and MCP initialize in one host-neutral flow. It auto-adds DCR unless you supply `--client-id`.
+- `--client-id` reuses a previously issued public client for the static ChatGPT OAuth client path.
 - `--read-smoke` adds an authenticated `list_tree` call after a usable token exists.
 - The probe writes redacted local artifacts under `scripts/railway/.artifacts/bridge-readiness/`.
 - `pwsh ./scripts/railway/doctor_readonly.ps1 -HostNeutralSummaryPath <summary.json>` lets the read-only doctor reuse a fresh host-neutral summary when local PowerShell HTTP is unreliable.
@@ -203,6 +204,7 @@ For the next bridge bootstrap check, use the sanitized Railway env inspector:
 `pwsh ./scripts/railway/inspect_bootstrap_readonly.ps1 -EmitJson`
 
 It verifies key bootstrap variables such as `PUBLIC_BASE_URL`, `PORT`, `OAUTH_ALLOWED_REDIRECT_URIS`, and `OAUTH_DEV_SUBJECT` without printing secret values.
+It also reports `stableSigningReady`, `signingIdentitySource`, and `restartSafeBootstrapReady` so you can separate a green same-process bootstrap from a deploy-safe bootstrap.
 
 `set_env.ps1` now forwards `OAUTH_ALLOWED_REDIRECT_URIS` too, so the CLI upload path matches the stricter OAuth bootstrap contract.
 
@@ -220,20 +222,28 @@ Use this operator path when ChatGPT App Create shows a concrete callback such as
    `pwsh ./scripts/railway/set_env.ps1 -Service <service-from-railway.target.json> -Environment production -OnlyAllowedRedirectUris -AppendAllowedRedirectUri "https://chatgpt.com/connector/oauth/<connector-id>" -DryRun`
 4. Apply the append once the dry run looks correct:
    `pwsh ./scripts/railway/set_env.ps1 -Service <service-from-railway.target.json> -Environment production -OnlyAllowedRedirectUris -AppendAllowedRedirectUri "https://chatgpt.com/connector/oauth/<connector-id>"`
-5. Re-run the host-neutral probe against that exact callback:
+5. Read back or mint a public client for that exact callback:
+   `node ./scripts/railway/bridge_readiness_probe.mjs --base-url https://YOUR-DOMAIN --redirect-uri "https://chatgpt.com/connector/oauth/<connector-id>" --probe-dcr`
+6. Re-run the host-neutral probe against that exact callback:
    `node ./scripts/railway/bridge_readiness_probe.mjs --base-url https://YOUR-DOMAIN --redirect-uri "https://chatgpt.com/connector/oauth/<connector-id>" --full-auth --read-smoke`
-6. Interpret the probe summary:
+   If ChatGPT UI DCR already failed but the probe returned `chatgptCustomClient.clientId`, retry with that static client:
+   `node ./scripts/railway/bridge_readiness_probe.mjs --base-url https://YOUR-DOMAIN --redirect-uri "https://chatgpt.com/connector/oauth/<connector-id>" --client-id "<public-client-id>" --full-auth --read-smoke`
+7. Interpret the probe summary:
    - `allowlist-mismatch`: the exact callback is still missing from `OAUTH_ALLOWED_REDIRECT_URIS`.
    - `missing-dev-subject`: set `OAUTH_DEV_SUBJECT` before expecting `/oauth/authorize` to issue codes.
+   - `unknown-client-id-or-lost-state`: the provided or previously issued `client_id` is no longer recognized; treat this as lost bootstrap state or rotated signing identity.
    - `dcr-interop-gap`: discovery and baseline OAuth probes are green, but `POST /oauth/register` still fails for that exact callback.
    - `other-oauth-bootstrap-gap`: another metadata or bootstrap issue still needs diagnosis.
 
 Use DCR directly when ChatGPT can complete RFC 7591 registration itself.
 
-Use the static `Benutzerdefinierter OAuth-Client` path when the probe registers successfully but the ChatGPT UI still reports that the server does not support RFC 7591. In that case, reuse the `dcrRegistration.clientId` from `bridge_readiness_probe.mjs`; the current thin slice registers a public client with `token_endpoint_auth_method=none`, so no client secret is expected.
+Use the static `Benutzerdefinierter OAuth-Client` path when the probe registers successfully but the ChatGPT UI still reports that the server does not support RFC 7591. In that case, reuse the `chatgptCustomClient.clientId` from `bridge_readiness_probe.mjs`, or pass a previously captured value back into the probe with `--client-id`; the current thin slice registers a public client with `token_endpoint_auth_method=none`, so no client secret is expected. That static path remains deploy-safe while the signing identity stays stable through `OAUTH_JWT_PRIVATE_KEY` or the GitHub App key fallback.
 
 The legacy callback `https://chat.openai.com/aip/callback` can still be probed explicitly in the same way when you need parity with older evidence:
 `node ./scripts/railway/bridge_readiness_probe.mjs --base-url https://YOUR-DOMAIN --redirect-uri "https://chat.openai.com/aip/callback" --full-auth --read-smoke`
+
+For the static-client retry path against a previously captured ChatGPT client id, run:
+`node ./scripts/railway/bridge_readiness_probe.mjs --base-url https://YOUR-DOMAIN --redirect-uri "https://chatgpt.com/connector/oauth/<connector-id>" --client-id "<public-client-id>" --full-auth --read-smoke`
 
 For a local OAuth guardrail smoke, run:
 `npm run test:oauth`

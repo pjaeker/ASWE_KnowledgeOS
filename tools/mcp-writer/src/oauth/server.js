@@ -296,8 +296,30 @@ function renderMissingSubjectPage() {
 
 export function createOAuthService(config) {
   const router = Router();
-  const state = createOAuthState(config);
   const keyMaterial = createSigningKeyMaterial(config);
+  const stateTokenIssuer = `urn:${String(config.serviceName || "aswe-mcp-writer")}:oauth-state`;
+  const state = createOAuthState({
+    config,
+    signToken({ payload, audience, expiresIn, header, noTimestamp }) {
+      return signJwt({
+        payload,
+        keyMaterial,
+        issuer: stateTokenIssuer,
+        audience,
+        expiresIn,
+        header,
+        noTimestamp
+      });
+    },
+    verifyToken({ token, audience }) {
+      return verifyJwt({
+        token,
+        keyMaterial,
+        issuer: stateTokenIssuer,
+        audience
+      });
+    }
+  });
 
   function authenticateAccessToken(req) {
     const authorization = String(req.headers.authorization || "");

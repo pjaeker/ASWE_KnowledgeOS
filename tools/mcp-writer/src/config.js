@@ -75,8 +75,9 @@ export function loadConfig() {
   const policy = JSON.parse(rawPolicy);
 
   const privateKeyRaw = required("GITHUB_PRIVATE_KEY");
+  const githubPrivateKey = normalizeMultilineSecret(privateKeyRaw);
   const configuredMcpSharedSecret = optional("MCP_SHARED_SECRET", "");
-  const oauthJwtPrivateKey = normalizeMultilineSecret(optional("OAUTH_JWT_PRIVATE_KEY", ""));
+  const configuredOauthJwtPrivateKey = normalizeMultilineSecret(optional("OAUTH_JWT_PRIVATE_KEY", ""));
 
   return {
     port: Number(optional("PORT", "3000")),
@@ -93,7 +94,7 @@ export function loadConfig() {
     github: {
       appId: required("GITHUB_APP_ID"),
       installationId: required("GITHUB_INSTALLATION_ID"),
-      privateKey: normalizeMultilineSecret(privateKeyRaw)
+      privateKey: githubPrivateKey
     },
     oauth: {
       devSubject: optional("OAUTH_DEV_SUBJECT", ""),
@@ -102,7 +103,11 @@ export function loadConfig() {
       codeTtlSeconds: optionalNumber("OAUTH_CODE_TTL_SECONDS", 600),
       tokenTtlSeconds: optionalNumber("OAUTH_TOKEN_TTL_SECONDS", 3600),
       registrationEnabled: optional("OAUTH_DCR_ENABLED", "true").toLowerCase() !== "false",
-      jwtPrivateKey: oauthJwtPrivateKey
+      jwtPrivateKey: configuredOauthJwtPrivateKey,
+      jwtPrivateKeyConfigured: Boolean(configuredOauthJwtPrivateKey),
+      jwtPrivateKeySource: configuredOauthJwtPrivateKey
+        ? "OAUTH_JWT_PRIVATE_KEY"
+        : (githubPrivateKey ? "GITHUB_PRIVATE_KEY" : "generated_ephemeral")
     },
     policy
   };

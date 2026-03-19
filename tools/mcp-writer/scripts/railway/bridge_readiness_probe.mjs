@@ -14,7 +14,8 @@ const DEFAULTS = {
   redirectUri: "https://chat.openai.com/aip/callback",
   scope: "openid mcp.read",
   readRepo: "pjaeker/ASWE_KnowledgeOS",
-  readPath: "blackboard/"
+  readPath: "blackboard/",
+  clientId: ""
 };
 
 const TOKEN_RESPONSE_KEYS = ["access_token", "id_token", "refresh_token"];
@@ -32,6 +33,7 @@ Options:
   --full-auth            Run DCR + authorization code + token + MCP initialize
   --read-smoke           After acquiring or receiving a token, call list_tree
   --access-token <token> Reuse an existing access token instead of running full auth
+  --client-id <id>       Reuse a previously issued public client_id for authorize/token
   --client-name <name>   OAuth client name for DCR
   --redirect-uri <uri>   Redirect URI for DCR and authorization flow
   --scope <scope>        Requested scope (default: "${DEFAULTS.scope}")
@@ -72,6 +74,7 @@ function parseArgs(argv) {
     fullAuth: false,
     readSmoke: false,
     accessToken: "",
+    clientId: DEFAULTS.clientId,
     clientName: DEFAULTS.clientName,
     redirectUri: DEFAULTS.redirectUri,
     scope: DEFAULTS.scope,
@@ -93,6 +96,10 @@ function parseArgs(argv) {
         break;
       case "--access-token":
         options.accessToken = readOption(argv, index, arg);
+        index += 1;
+        break;
+      case "--client-id":
+        options.clientId = readOption(argv, index, arg);
         index += 1;
         break;
       case "--client-name":
@@ -123,7 +130,6 @@ function parseArgs(argv) {
         break;
       case "--full-auth":
         options.fullAuth = true;
-        options.probeDcr = true;
         break;
       case "--read-smoke":
         options.readSmoke = true;
@@ -141,6 +147,10 @@ function parseArgs(argv) {
 
   if (!options.baseUrl) {
     failUsage("--base-url is required");
+  }
+
+  if (options.fullAuth && !options.clientId) {
+    options.probeDcr = true;
   }
 
   return options;
@@ -415,7 +425,11 @@ function buildPlan(options, outDir) {
   }
 
   if (options.fullAuth) {
-    plan.optional.push("POST /oauth/authorize with PKCE approval");
+    plan.optional.push(
+      options.clientId
+        ? "POST /oauth/authorize with PKCE approval using provided client_id"
+        : "POST /oauth/authorize with PKCE approval"
+    );
     plan.optional.push("POST /oauth/token");
     plan.optional.push("POST /mcp initialize with Bearer token");
   }
@@ -467,6 +481,11 @@ function classifyBootstrapSummary(results, options) {
   const authorizeBlockedByDevSubject = results.some(
     (result) => result.name === "authorize-approve" && resultNotesContain(result, /OAUTH_DEV_SUBJECT/i)
   );
+  const unknownClientIdOrLostState = results.some(
+    (result) =>
+      ["authorize-approve", "token"].includes(result.name) &&
+      resultNotesContain(result, /unknown client_id|invalid_client/i)
+  );
   const dcrResult = getResultByName(results, "dcr-register");
   const coreBootstrapGreen = coreBootstrapProbeNames.every(
     (name) => getResultByName(results, name)?.passed === true
@@ -484,6 +503,10 @@ function classifyBootstrapSummary(results, options) {
     primary = "missing-dev-subject";
     reason =
       "OAUTH_DEV_SUBJECT is missing, so the development authorization bootstrap cannot issue authorization codes.";
+  } else if (unknownClientIdOrLostState) {
+    primary = "unknown-client-id-or-lost-state";
+    reason =
+      "The client_id used for authorize/token is no longer recognized. Treat this as lost bootstrap state or rotated signing identity until proven otherwise.";
   } else if (options.probeDcr && dcrResult && !dcrResult.passed && coreBootstrapGreen) {
     primary = "dcr-interop-gap";
     reason =
@@ -504,6 +527,7 @@ function classifyBootstrapSummary(results, options) {
       dcrBlockedByRedirectAllowlist,
       authorizeBlockedByRedirectAllowlist,
       authorizeBlockedByDevSubject,
+      unknownClientIdOrLostState,
       dcrInteropGap: primary === "dcr-interop-gap",
       otherOauthBootstrapGap: primary === "other-oauth-bootstrap-gap"
     }
@@ -558,7 +582,7 @@ async function main() {
   const results = [];
   let step = 1;
   let accessToken = options.accessToken;
-  let clientId = "";
+  let clientId = String(options.clientId || "");
   let authorizationCode = "";
   let codeVerifier = "";
   let dcrRegistration = null;
@@ -791,11 +815,13 @@ async function main() {
     });
 
     results.push(dcrProbe.result);
-    clientId = String(dcrProbe.jsonBody?.client_id || "");
+    if (!clientId) {
+      clientId = String(dcrProbe.jsonBody?.client_id || "");
+    }
     dcrRegistration = {
       attempted: true,
-      succeeded: Boolean(clientId),
-      clientId: clientId || null,
+      succeeded: Boolean(dcrProbe.jsonBody?.client_id),
+      clientId: String(dcrProbe.jsonBody?.client_id || "") || null,
       clientName: String(dcrProbe.jsonBody?.client_name || options.clientName || ""),
       redirectUris: Array.isArray(dcrProbe.jsonBody?.redirect_uris)
         ? dcrProbe.jsonBody.redirect_uris
@@ -867,6 +893,11 @@ async function main() {
             return notes;
           }
 
+          if (response.status === 400 && /Unknown client_id/i.test(bodyText)) {
+            notes.push("Authorization rejected unknown client_id; bootstrap client state may be missing or the signing identity may have rotated.");
+            return notes;
+          }
+
           if (response.status === 503) {
             notes.push("Authorization bootstrap unavailable; OAUTH_DEV_SUBJECT may be unset.");
             return notes;
@@ -924,6 +955,11 @@ async function main() {
         }).toString(),
         assertion: (response, headerMap, bodyText, jsonBody) => {
           const notes = [];
+
+          if (response.status === 400 && (jsonBody?.error === "invalid_client" || /Unknown client_id/i.test(bodyText))) {
+            notes.push("Token exchange rejected unknown client_id; bootstrap client state may be missing or the signing identity may have rotated.");
+            return notes;
+          }
 
           if (!jsonBody) {
             notes.push("Expected token response JSON.");
@@ -1069,6 +1105,7 @@ async function main() {
     baseUrl,
     outDir,
     input: {
+      clientId: options.clientId || null,
       clientName: options.clientName,
       redirectUri: options.redirectUri,
       scope: options.scope,
@@ -1079,7 +1116,8 @@ async function main() {
       probeDcr: options.probeDcr,
       fullAuth: options.fullAuth,
       readSmoke: options.readSmoke,
-      accessTokenProvided: Boolean(options.accessToken)
+      accessTokenProvided: Boolean(options.accessToken),
+      clientIdProvided: Boolean(options.clientId)
     },
     classification,
     flags: {
@@ -1087,12 +1125,15 @@ async function main() {
     },
     dcrRegistration,
     chatgptCustomClient: {
-      ready: Boolean(dcrRegistration.clientId),
-      clientId: dcrRegistration.clientId,
-      tokenEndpointAuthMethod: dcrRegistration.tokenEndpointAuthMethod,
+      ready: Boolean(clientId),
+      clientId: clientId || null,
+      clientIdSource: options.clientId ? "provided" : (dcrRegistration.clientId ? "dcr" : "none"),
+      tokenEndpointAuthMethod: dcrRegistration.clientId
+        ? dcrRegistration.tokenEndpointAuthMethod
+        : "none",
       redirectUri: options.redirectUri,
-      note: dcrRegistration.clientId
-        ? "If ChatGPT UI DCR still misbehaves, reuse this public client_id with the static 'Benutzerdefinierter OAuth-Client' path."
+      note: clientId
+        ? "Reuse this public client_id with the static 'Benutzerdefinierter OAuth-Client' path. It remains restart-stable while the deployment keeps a stable OAuth signing identity through OAUTH_JWT_PRIVATE_KEY or the GitHub App key fallback."
         : ""
     },
     passed: results.filter((result) => result.passed).length,

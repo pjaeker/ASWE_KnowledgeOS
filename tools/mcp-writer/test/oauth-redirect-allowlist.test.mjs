@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import { once } from "node:events";
 import express from "express";
 import { toErrorPayload } from "../src/errors.js";
@@ -7,9 +8,17 @@ import { createOAuthService } from "../src/oauth/server.js";
 const ALLOWLISTED_REDIRECT_URI = "https://chat.openai.com/aip/callback";
 const CHATGPT_CONNECTOR_REDIRECT_URI = "https://chatgpt.com/connector/oauth/test-connector";
 const BLOCKED_REDIRECT_URI = "https://example.com/callback";
+const STABLE_TEST_JWT_PRIVATE_KEY = crypto
+  .generateKeyPairSync("rsa", { modulusLength: 2048 })
+  .privateKey.export({
+    type: "pkcs8",
+    format: "pem"
+  })
+  .toString();
 
 function createTestConfig(overrides = {}) {
   const oauthOverrides = overrides.oauth || {};
+  const githubOverrides = overrides.github || {};
 
   return {
     serviceName: "aswe-mcp-writer-test",
@@ -17,6 +26,10 @@ function createTestConfig(overrides = {}) {
     railwayPublicDomain: "",
     mcpBasePath: "/mcp",
     oauthBasePath: "/oauth",
+    github: {
+      privateKey: "",
+      ...githubOverrides
+    },
     oauth: {
       devSubject: "dev-user",
       allowedRedirectUris: [ALLOWLISTED_REDIRECT_URI],
@@ -87,6 +100,18 @@ async function registerClient(baseUrl, redirectUri = ALLOWLISTED_REDIRECT_URI) {
 }
 
 function authorizeBody({ clientId, redirectUri = ALLOWLISTED_REDIRECT_URI }) {
+  return authorizeBodyWithPkce({
+    clientId,
+    redirectUri,
+    codeChallenge: "challenge-123"
+  });
+}
+
+function authorizeBodyWithPkce({
+  clientId,
+  redirectUri = ALLOWLISTED_REDIRECT_URI,
+  codeChallenge
+}) {
   return new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -94,10 +119,28 @@ function authorizeBody({ clientId, redirectUri = ALLOWLISTED_REDIRECT_URI }) {
     scope: "openid mcp.read",
     state: "state-123",
     nonce: "nonce-123",
-    code_challenge: "challenge-123",
+    code_challenge: codeChallenge,
     code_challenge_method: "S256",
     decision: "approve"
   });
+}
+
+function createPkcePair() {
+  const codeVerifier = crypto.randomBytes(32).toString("base64url");
+  const codeChallenge = crypto
+    .createHash("sha256")
+    .update(codeVerifier)
+    .digest("base64url");
+
+  return { codeVerifier, codeChallenge };
+}
+
+function extractAuthorizationCode(location) {
+  if (!location) {
+    return "";
+  }
+
+  return new URL(location).searchParams.get("code") || "";
 }
 
 const cases = [
@@ -213,6 +256,271 @@ const cases = [
           assert.equal(
             json.error.message,
             "OAUTH_DEV_SUBJECT must be configured to issue authorization codes"
+          );
+        }
+      );
+    }
+  },
+  {
+    name: "registered client_id survives service recreation when OAUTH_JWT_PRIVATE_KEY is stable",
+    async run() {
+      const oauthConfig = {
+        oauth: {
+          jwtPrivateKey: STABLE_TEST_JWT_PRIVATE_KEY,
+          allowedRedirectUris: [ALLOWLISTED_REDIRECT_URI, CHATGPT_CONNECTOR_REDIRECT_URI]
+        }
+      };
+      let clientId = "";
+
+      await withOAuthServer(oauthConfig, async ({ baseUrl }) => {
+        const { response, json } = await registerClient(baseUrl, CHATGPT_CONNECTOR_REDIRECT_URI);
+
+        assert.equal(response.status, 201);
+        clientId = json.client_id;
+      });
+
+      await withOAuthServer(oauthConfig, async ({ baseUrl }) => {
+        const pkce = createPkcePair();
+        const authorizeResponse = await fetch(`${baseUrl}/oauth/authorize`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          redirect: "manual",
+          body: authorizeBodyWithPkce({
+            clientId,
+            redirectUri: CHATGPT_CONNECTOR_REDIRECT_URI,
+            codeChallenge: pkce.codeChallenge
+          })
+        });
+
+        assert.equal(authorizeResponse.status, 302);
+        const location = authorizeResponse.headers.get("location");
+        assert.equal(typeof location, "string");
+        assert.match(location, /^https:\/\/chatgpt\.com\/connector\/oauth\/test-connector\?/);
+        assert.ok(extractAuthorizationCode(location));
+      });
+    }
+  },
+  {
+    name: "registered client_id survives service recreation when GITHUB_PRIVATE_KEY fallback is stable",
+    async run() {
+      const oauthConfig = {
+        github: {
+          privateKey: STABLE_TEST_JWT_PRIVATE_KEY
+        },
+        oauth: {
+          allowedRedirectUris: [ALLOWLISTED_REDIRECT_URI, CHATGPT_CONNECTOR_REDIRECT_URI]
+        }
+      };
+      let clientId = "";
+
+      await withOAuthServer(oauthConfig, async ({ baseUrl }) => {
+        const { response, json } = await registerClient(baseUrl, CHATGPT_CONNECTOR_REDIRECT_URI);
+
+        assert.equal(response.status, 201);
+        clientId = json.client_id;
+      });
+
+      await withOAuthServer(oauthConfig, async ({ baseUrl }) => {
+        const pkce = createPkcePair();
+        const authorizeResponse = await fetch(`${baseUrl}/oauth/authorize`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          redirect: "manual",
+          body: authorizeBodyWithPkce({
+            clientId,
+            redirectUri: CHATGPT_CONNECTOR_REDIRECT_URI,
+            codeChallenge: pkce.codeChallenge
+          })
+        });
+
+        assert.equal(authorizeResponse.status, 302);
+        const location = authorizeResponse.headers.get("location");
+        assert.equal(typeof location, "string");
+        assert.match(location, /^https:\/\/chatgpt\.com\/connector\/oauth\/test-connector\?/);
+        assert.ok(extractAuthorizationCode(location));
+      });
+    }
+  },
+  {
+    name: "authorization code survives service recreation when OAUTH_JWT_PRIVATE_KEY is stable",
+    async run() {
+      const oauthConfig = {
+        oauth: {
+          jwtPrivateKey: STABLE_TEST_JWT_PRIVATE_KEY,
+          allowedRedirectUris: [ALLOWLISTED_REDIRECT_URI, CHATGPT_CONNECTOR_REDIRECT_URI]
+        }
+      };
+      let clientId = "";
+      let authorizationCode = "";
+      let codeVerifier = "";
+
+      await withOAuthServer(oauthConfig, async ({ baseUrl }) => {
+        const registration = await registerClient(baseUrl, CHATGPT_CONNECTOR_REDIRECT_URI);
+        const pkce = createPkcePair();
+        const authorizeResponse = await fetch(`${baseUrl}/oauth/authorize`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          redirect: "manual",
+          body: authorizeBodyWithPkce({
+            clientId: registration.json.client_id,
+            redirectUri: CHATGPT_CONNECTOR_REDIRECT_URI,
+            codeChallenge: pkce.codeChallenge
+          })
+        });
+
+        assert.equal(authorizeResponse.status, 302);
+        clientId = registration.json.client_id;
+        codeVerifier = pkce.codeVerifier;
+        authorizationCode = extractAuthorizationCode(authorizeResponse.headers.get("location"));
+        assert.ok(authorizationCode);
+      });
+
+      await withOAuthServer(oauthConfig, async ({ baseUrl }) => {
+        const tokenResponse = await fetch(`${baseUrl}/oauth/token`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: new URLSearchParams({
+            grant_type: "authorization_code",
+            client_id: clientId,
+            redirect_uri: CHATGPT_CONNECTOR_REDIRECT_URI,
+            code: authorizationCode,
+            code_verifier: codeVerifier
+          })
+        });
+        const json = await tokenResponse.json();
+
+        assert.equal(tokenResponse.status, 200);
+        assert.equal(typeof json.access_token, "string");
+        assert.equal(typeof json.id_token, "string");
+      });
+    }
+  },
+  {
+    name: "authorization code survives service recreation when GITHUB_PRIVATE_KEY fallback is stable",
+    async run() {
+      const oauthConfig = {
+        github: {
+          privateKey: STABLE_TEST_JWT_PRIVATE_KEY
+        },
+        oauth: {
+          allowedRedirectUris: [ALLOWLISTED_REDIRECT_URI, CHATGPT_CONNECTOR_REDIRECT_URI]
+        }
+      };
+      let clientId = "";
+      let authorizationCode = "";
+      let codeVerifier = "";
+
+      await withOAuthServer(oauthConfig, async ({ baseUrl }) => {
+        const registration = await registerClient(baseUrl, CHATGPT_CONNECTOR_REDIRECT_URI);
+        const pkce = createPkcePair();
+        const authorizeResponse = await fetch(`${baseUrl}/oauth/authorize`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          redirect: "manual",
+          body: authorizeBodyWithPkce({
+            clientId: registration.json.client_id,
+            redirectUri: CHATGPT_CONNECTOR_REDIRECT_URI,
+            codeChallenge: pkce.codeChallenge
+          })
+        });
+
+        assert.equal(authorizeResponse.status, 302);
+        clientId = registration.json.client_id;
+        codeVerifier = pkce.codeVerifier;
+        authorizationCode = extractAuthorizationCode(authorizeResponse.headers.get("location"));
+        assert.ok(authorizationCode);
+      });
+
+      await withOAuthServer(oauthConfig, async ({ baseUrl }) => {
+        const tokenResponse = await fetch(`${baseUrl}/oauth/token`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: new URLSearchParams({
+            grant_type: "authorization_code",
+            client_id: clientId,
+            redirect_uri: CHATGPT_CONNECTOR_REDIRECT_URI,
+            code: authorizationCode,
+            code_verifier: codeVerifier
+          })
+        });
+        const json = await tokenResponse.json();
+
+        assert.equal(tokenResponse.status, 200);
+        assert.equal(typeof json.access_token, "string");
+        assert.equal(typeof json.id_token, "string");
+      });
+    }
+  },
+  {
+    name: "authorization code remains single-use within the same process",
+    async run() {
+      await withOAuthServer(
+        {
+          oauth: {
+            jwtPrivateKey: STABLE_TEST_JWT_PRIVATE_KEY
+          }
+        },
+        async ({ baseUrl }) => {
+          const registration = await registerClient(baseUrl);
+          const pkce = createPkcePair();
+          const authorizeResponse = await fetch(`${baseUrl}/oauth/authorize`, {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            redirect: "manual",
+            body: authorizeBodyWithPkce({
+              clientId: registration.json.client_id,
+              codeChallenge: pkce.codeChallenge
+            })
+          });
+          const authorizationCode = extractAuthorizationCode(authorizeResponse.headers.get("location"));
+
+          const exchangeToken = async () => fetch(`${baseUrl}/oauth/token`, {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+              grant_type: "authorization_code",
+              client_id: registration.json.client_id,
+              redirect_uri: ALLOWLISTED_REDIRECT_URI,
+              code: authorizationCode,
+              code_verifier: pkce.codeVerifier
+            })
+          });
+
+          const firstTokenResponse = await exchangeToken();
+          const firstJson = await firstTokenResponse.json();
+          assert.equal(firstTokenResponse.status, 200);
+          assert.equal(typeof firstJson.access_token, "string");
+
+          const secondTokenResponse = await exchangeToken();
+          const secondJson = await secondTokenResponse.json();
+          assert.equal(secondTokenResponse.status, 400);
+          assert.equal(
+            secondJson.error_description,
+            "Authorization code is missing, expired, or already used."
           );
         }
       );
