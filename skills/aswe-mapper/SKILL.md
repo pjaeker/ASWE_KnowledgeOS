@@ -5,7 +5,13 @@ description: read-first mapper for aswe-style repository workstreams. use when c
 
 # Overview
 
-Use this skill to map the current workstream slice before implementation or verification. Stay read-first and keep the result small, concrete, and path-aware.
+Use this skill as a bounded role under the current technical workstream. The mapper narrows scope, files, and anchor reads before implementation, verification, or closeout.
+
+## Mirror and binding discipline
+
+- repo-local `.codex` artifacts are mirror/materialization only
+- semantic origin remains the shared repo contracts plus this skill contract
+- use the mapper only under the active technical slice
 
 ## Workflow
 

@@ -5,7 +5,13 @@ description: read-first verify planner for aswe-style workstreams. use when chat
 
 # Overview
 
-Use this skill to design safe verify steps for a current thin slice. Keep checks changed-files-oriented and congruent with repo governance.
+Use this skill as a bounded role under the current technical workstream when the next decision depends on safer verification, smoke design, or missing evidence capture.
+
+## Mirror and binding discipline
+
+- repo-local `.codex` artifacts are mirror/materialization only
+- semantic origin remains the shared repo contracts plus this skill contract
+- use the test-agent only under the active technical slice
 
 ## Workflow
 

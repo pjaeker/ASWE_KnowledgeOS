@@ -72,6 +72,11 @@ die bei GPT-Pro-first Skills und spaeteren Codex-Subagenten gemeinsam auftreten 
 
 **Gegenmassnahme:** Skill-Vertrag und shared governance bleiben fuehrend; `.codex` ist Spiegelung, nicht Ursprung.
 
+## FM-10b Mirror Drift
+**Symptom:** Repo-Contracts, Skills und `.codex`-Artefakte tragen unterschiedliche Anker, Statusannahmen oder Materialisierungszustaende.
+
+**Gegenmassnahme:** Mirror-Disziplin erzwingen; Anker- und Zustandsaussagen immer auf denselben aktuellen Stand harmonisieren.
+
 ## FM-11 Cost / Iteration Runaway
 **Symptom:** Lange Schleifen verbrennen Budget ohne klare Fortschrittskriterien.
 

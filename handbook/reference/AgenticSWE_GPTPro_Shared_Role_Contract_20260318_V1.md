@@ -32,10 +32,11 @@ dass dieselben Rollen auch mit kleineren ChatGPT-Modellen oder spaeteren Codex-M
 Jede bounded Rolle arbeitet unter dem effektiven Session-Contract.
 In diesem Paket ist die fuehrende Kette:
 
-- Canonical Entry: `AgenticSWE_KnowledgeOS_ENTRY_LATEST_20260318_V1`
-- Latest Status Update Found: `AgenticSWE_KnowledgeOS_RepoStatusUpdate_20260318_V1`
-- Active Technical Workstream: `AgenticSWE_KnowledgeOS_WS_MCPWriter_Railway_20260318_V1`
-- Leading Orchestration Enabler: `AgenticSWE_KnowledgeOS_WS_Codex_Subagent_Orchestration_20260318_V5`
+- Canonical Entry: `meta/state/entry/AgenticSWE_KnowledgeOS_ENTRY_LATEST_20260318_V2.md`
+- Latest Status Update Found: `meta/state/AgenticSWE_KnowledgeOS_RepoStatusUpdate_20260318_V2.md`
+- Active Technical Workstream: `blackboard/workstreams/AgenticSWE_KnowledgeOS_WS_ChatGPT_MCP_Bridge_20260318_V1.md`
+- Leading Orchestration Enabler: `blackboard/workstreams/AgenticSWE_KnowledgeOS_WS_Codex_Subagent_Orchestration_20260318_V6.md`
+- Runtime Policy: `handbook/reference/AgenticSWE_Codex_Subagent_Runtime_Policy_20260319_V1.md`
 
 ## Main-Agent-Regel
 
@@ -73,6 +74,8 @@ Nur die Tiefe, Geschwindigkeit, Kosten und erlaubte Toolflaeche aendern sich.
 4. Liefere den gemeinsamen Outputvertrag vollstaendig.
 5. Gib Unsicherheit, offene Fragen und kleinsten naechsten Schritt explizit an.
 6. Handoffe Mutation, finalen Merge und Hauptfokuswechsel immer zurueck an Main Agent oder einen explizit autorisierten Pfad.
+7. Binde jede bounded Rolle explizit an den **aktiven technischen Slice**; generische oder ungebundene Rollenspawns sind unzulaessig.
+8. Trenne **materialized** von **spawn-ready**; repo-lokale Existenz einer `.codex`-Rolle allein autorisiert ihren Einsatz noch nicht.
 
 ## Gemeinsame Nicht-Ziele
 
@@ -115,6 +118,13 @@ Nur die Tiefe, Geschwindigkeit, Kosten und erlaubte Toolflaeche aendern sich.
 - `codex_fast_helper`: guenstige Codex- oder API-nahe Helper-Klasse fuer leichte Routinearbeit
 - `api_nano_helper`: sehr guenstige API-Klasse fuer summarization-, tagging- und classification-lastige Off-Path-Teilaufgaben
 
+## Mirror-Disziplin
+
+- `handbook/reference/**` ist der repo-lokale semantische Ursprung fuer Shared Governance.
+- `skills/**` tragen den wiederverwendbaren Rollenvertrag.
+- `.codex/**` ist Spiegelung bzw. Materialisierung fuer repo-lokale Runtime-Nutzung.
+- Bei Konflikten zwischen Mirror und Ursprung gelten nie `.codex`-Artefakte als fuehrend.
+
 ## Handoff-Grenze
 
 Eine bounded Rolle endet spaetestens dann, wenn einer der folgenden Faelle eintritt:
@@ -124,6 +134,12 @@ Eine bounded Rolle endet spaetestens dann, wenn einer der folgenden Faelle eintr
 - konkurrierende Rollenlogiken geraten in Konflikt
 - Verify oder Runtime-Befund ist zu duenn fuer weitere sichere Spezialisierung
 - Kosten-, Zeit- oder Kontextbudget laufen gegen Governance-Grenzen
+
+## Materialisierungszustand vs. Spawn-Readiness
+
+- `materialized`: repo-lokaler Mirror oder `.codex`-Artefakt existiert.
+- `spawn-ready`: die Rolle darf unter aktuellem Session-Contract und aktivem technischen Slice jetzt bounded eingesetzt werden.
+- Eine Rolle kann **materialized, aber nicht default spawn-ready** sein.
 
 ## Erfolgsbegriff
 

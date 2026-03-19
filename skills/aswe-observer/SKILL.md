@@ -5,7 +5,13 @@ description: read-only observer for runtime, service, deployment, and log eviden
 
 # Overview
 
-Use this skill to inspect runtime or host evidence in read-only mode. The skill summarizes the strongest evidence and recommends the smallest safe diagnostic next step.
+Use this skill to inspect runtime or host evidence in read-only mode as a bounded role under the active technical workstream. The skill must anchor its diagnosis to the current session state before interpreting logs, deploy status, or health signals.
+
+## Mirror and binding discipline
+
+- repo-local `.codex` artifacts are mirror/materialization only
+- semantic origin remains the shared repo contracts plus this skill contract
+- use the observer only under the active technical slice
 
 ## Workflow
 

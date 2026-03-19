@@ -118,7 +118,7 @@ Jeder neue Skill-Stand soll mindestens festhalten:
 - Kernverbesserung: Problemcluster, Hypothesenpriorisierung und Dead-End-Verdichtung von Mapper/Observer/Test-Agent abgegrenzt
 - betroffene Repo-Dokumente: `WS_Codex_Subagent_Orchestration_20260318_V5`, `Closeout_FreshEvidence_Preflight_Runbook_20260318_V5`
 - betroffene Skill-Artefakte: `skills/aswe-triager/`, `skills/aswe-session-closeout-guardrails-V4/`
-- Folgeeffekt fuer Closeout oder Role Binding: im Workstream als `optional-later` kennzeichnen, bis ein klarer `.codex`-Materialisierungsbedarf belegt ist
+- Folgeeffekt fuer Closeout oder Role Binding: repo-lokale `.codex`-Materialisierung vorhanden; Triager als `materialized` fuehren, aber Spawn-Readiness nur `conditional`
 
 ## Pflegehinweis
 

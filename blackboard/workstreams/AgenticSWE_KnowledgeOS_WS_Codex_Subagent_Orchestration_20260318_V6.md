@@ -40,10 +40,12 @@ Die Autonomie-Bausteine werden **in diesen bestehenden Workstream integriert**. 
 
 ## 3) Aktueller Kontext
 
-- RepoStatusUpdate im kanonischen Startpfad: `meta/state/AgenticSWE_KnowledgeOS_RepoStatusUpdate_20260317_V1.md`
-- Primaerer technischer Fokus bleibt: `blackboard/workstreams/AgenticSWE_KnowledgeOS_WS_MCPWriter_Railway_20260313_V1.md`
-- Repo-weite Enabling-Schicht bisher: `blackboard/workstreams/AgenticSWE_KnowledgeOS_WS_Codex_Subagent_Orchestration_20260317_V4.md`
-- Closeout-Runbook: `handbook/runbooks/AgenticSWE_KnowledgeOS_Closeout_FreshEvidence_Preflight_Runbook_20260317_V4.md`
+- Canonical Entry im aktuellen Startpfad: `meta/state/entry/AgenticSWE_KnowledgeOS_ENTRY_LATEST_20260318_V2.md`
+- Latest Status Update Found im aktuellen Startpfad: `meta/state/AgenticSWE_KnowledgeOS_RepoStatusUpdate_20260318_V2.md`
+- Primaerer technischer Fokus bleibt: `blackboard/workstreams/AgenticSWE_KnowledgeOS_WS_ChatGPT_MCP_Bridge_20260318_V1.md`
+- Repo-weite Enabling-Schicht: `blackboard/workstreams/AgenticSWE_KnowledgeOS_WS_Codex_Subagent_Orchestration_20260318_V6.md`
+- Shared Contracts: `handbook/reference/AgenticSWE_GPTPro_Shared_Role_Contract_20260318_V1.md`, `handbook/reference/AgenticSWE_GPTPro_Shared_Output_Contract_20260318_V1.md`, `handbook/reference/AgenticSWE_GPTPro_Shared_Handoff_Patterns_20260318_V1.md`, `handbook/reference/AgenticSWE_GPTPro_Shared_Failure_Modes_20260318_V1.md`
+- Runtime-Policy-Referenz: `handbook/reference/AgenticSWE_Codex_Subagent_Runtime_Policy_20260319_V1.md`
 - ENTRY-LATEST verweist den Enabler nur bei bounded Rollen oder Closeout-/Orchestrierungsfragen nachzuziehen.
 - Das Core-Skill-Paket wurde in der Refactor-Iteration V3 substantiell harmonisiert; spaetere additive Iterationen duerfen diese Skill-Basis nicht stillschweigend semantisch ueberholen.
 
@@ -131,6 +133,9 @@ abgeschlossen
 ### Slice D - Role binding to active workstreams
 teilweise vorbereitet, jetzt konkretisieren
 
+### Slice D1 - Active technical slice binding
+neu, jetzt explizit festziehen
+
 ### Slice E - Executable repo-local artifacts
 teilweise vorbereitet, jetzt gezielt fuer bounded Rollen materialisieren
 
@@ -194,3 +199,17 @@ Neue additive Artefakte sollen spaeter in Zielpfaden wie diesen materialisiert w
 3. Anschliessend den `Skill Drift Check` gegen das Core-Skill-Paket aus Iteration V3 ausarbeiten.
 4. Erst dann `Resume Sidecar` und `Dead-End Registry` materialisieren.
 5. `.codex`-Artefakte weiter nur dort erzeugen, wo ein aktiver technischer Slice den Mehrwert belegt.
+
+## 14) Runtime- und Binding-Entscheidung fuer den aktuellen Stand
+
+- Closeout darf bounded Rollen nur empfehlen, wenn ein klarer naechster technischer Slice existiert.
+- Spawn-ready ist eine bounded Rolle erst, wenn Session-Contract, aktiver technischer Slice, Evidence-Oberflaeche und Rueckgabegrenze explizit feststehen.
+- Repo-lokale `.codex`-Materialisierung bleibt zulaessig, wenn sie additive Spiegelung eines aktiven technischen Slices ist und keinen zweiten Writer-Pfad eroeffnet.
+- Der naechste konkrete Binding-Slice ist der aktive technische Workstream `blackboard/workstreams/AgenticSWE_KnowledgeOS_WS_ChatGPT_MCP_Bridge_20260318_V1.md`.
+- Priorisierte bounded Rollenfolge fuer diesen Slice: `ws_mapper` -> `bridge_test_agent` -> `railway_observer` -> `issue_triager` -> `bridge_doc_agent`.
+
+## 15) Triager-Status nach Materialisierungscheck
+
+- Der Triager ist repo-lokal **materialized**.
+- Spawn-Readiness des Triagers bleibt **conditional** und ist nicht default.
+- Die Bedingung ist erfuellt, wenn konkurrierende Hypothesen, Dead-End-Wiederholung oder Priorisierungsengpass vorliegen.

@@ -51,6 +51,7 @@ Immer ausweisen:
 - inherited entry or equivalent anchor
 - inherited repo status or dual-status view
 - active technical workstream
+- bound active technical slice
 - drift or conflict: `yes` / `no`
 
 ### 3. active scope
@@ -102,6 +103,7 @@ aber **keines** der 9 Pflichtfelder auslassen.
 
 - repo-materialisierte Evidence als live ausgeben
 - aktiven technischen Hauptfokus implizit umdefinieren
+- den gebundenen aktiven technischen Slice stillschweigend erweitern
 - finale Merge- oder Deploy-Entscheidung als already done ausgeben
 - Handoff stillschweigend unterschlagen
 
@@ -110,6 +112,7 @@ aber **keines** der 9 Pflichtfelder auslassen.
 Wenn ein Handoff erfolgt, muss mindestens mitgegeben werden:
 - inherited anchor summary
 - active scope summary
+- bound active technical slice
 - evidence anchors
 - confidence
 - exact next question for the next role

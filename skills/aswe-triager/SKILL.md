@@ -7,6 +7,12 @@ description: read-first triager for aswe-style technical investigations. use whe
 
 Use this skill when a technical thread has accumulated multiple hypotheses, failed attempts, or competing next steps. The skill orders the investigation space and prevents repeated dead ends.
 
+## Mirror and binding discipline
+
+- repo-local `.codex` artifacts are mirror/materialization only
+- semantic origin remains the shared repo contracts plus this skill contract
+- use the triager only under the active technical slice
+
 ## Workflow
 
 1. Read the current problem frame and the strongest evidence from mapper, test, and observer outputs.
@@ -22,12 +28,28 @@ Always return:
 4. dead ends to avoid repeating
 5. recommended next investigation step
 
+## Shared contract inheritance
+
+- inherit the current session anchor before producing role-specific output
+- keep canonical routing, dual-status truth, and requested focus separate when they differ
+- do not displace the active technical workstream
+- treat repo-local `.codex` artifacts as mirror/materialization, not as semantic origin
+- operate read-first and package-local when the environment is an uploaded bundle rather than a live repo
+
 ## Hard rules
 
 - do not edit files
 - do not invent evidence
 - do not collapse scope mapping, testing, and observation into one vague role
 - keep the recommendation narrow and testable
+- do not use triage as a substitute for fresh evidence when observer or test-agent is clearly required
+- do not spawn outside the active technical slice
+
+## Materialization status
+
+- repo-local `.codex` mirror for triage may exist
+- triager is therefore `materialized`
+- spawn-readiness remains `conditional`, not default
 
 ## References
 

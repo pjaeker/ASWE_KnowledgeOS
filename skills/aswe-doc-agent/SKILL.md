@@ -7,6 +7,12 @@ description: read-first documentation wording specialist for aswe-style workstre
 
 Use this skill for wording-level documentation support after the technical picture is already stable. The skill suggests precise wording and structure implications without becoming a second writer.
 
+## Mirror and binding discipline
+
+- repo-local `.codex` artifacts are mirror/materialization only
+- semantic origin remains the shared repo contracts plus this skill contract
+- use the doc-agent only under the active technical slice
+
 ## Workflow
 
 1. Read confirmed findings from mapper, test, observer, or triager outputs.

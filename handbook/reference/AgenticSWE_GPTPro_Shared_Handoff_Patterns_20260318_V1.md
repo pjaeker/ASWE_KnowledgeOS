@@ -33,10 +33,11 @@ Jeder Handoff enthaelt:
 
 1. inherited anchor summary
 2. active scope summary
-3. strongest evidence anchors
-4. open questions for the next role
-5. exact next action request
-6. stop conditions or risks to preserve
+3. bound active technical slice
+4. strongest evidence anchors
+5. open questions for the next role
+6. exact next action request
+7. stop conditions or risks to preserve
 
 ## Empfohlene Richtungen
 
@@ -78,6 +79,7 @@ Immer zum Main Agent zurueckgeben, wenn:
 ## Anti-Pattern
 
 - ein Handoff ohne Anchor-Zusammenfassung
+- ein Handoff ohne explizite Slice-Bindung
 - ein Handoff nur mit allgemeiner Bitte wie `schau mal drueber`
 - eine bounded Rolle, die direkt in eine andere mutierende Rolle springt
 - eine bounded Rolle, die sich selbst erneut spawned statt sauber zurueckzugeben
