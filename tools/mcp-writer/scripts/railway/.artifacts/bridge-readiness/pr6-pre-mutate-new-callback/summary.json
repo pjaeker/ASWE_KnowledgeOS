@@ -1,0 +1,198 @@
+{
+  "baseUrl": "https://asweknowledgeos-production.up.railway.app",
+  "outDir": "C:\\Users\\PJ\\.codex\\worktrees\\d8a9\\ASWE_KnowledgeOS\\tools\\mcp-writer\\scripts\\railway\\.artifacts\\bridge-readiness\\pr6-pre-mutate-new-callback",
+  "input": {
+    "clientName": "ChatGPT Connector",
+    "redirectUri": "https://chatgpt.com/connector/oauth/ijq0caHmR1iW",
+    "scope": "openid mcp.read",
+    "readRepo": "pjaeker/ASWE_KnowledgeOS",
+    "readPath": "blackboard/"
+  },
+  "mode": {
+    "probeDcr": true,
+    "fullAuth": true,
+    "readSmoke": true,
+    "accessTokenProvided": false
+  },
+  "classification": {
+    "primary": "allowlist-mismatch",
+    "reason": "The exact redirect URI 'https://chatgpt.com/connector/oauth/ijq0caHmR1iW' is not currently allowlisted in OAUTH_ALLOWED_REDIRECT_URIS.",
+    "coreBootstrapGreen": true,
+    "failedRequiredProbeNames": [
+      "dcr-register",
+      "authorize-approve",
+      "token",
+      "mcp-initialize",
+      "mcp-read-smoke"
+    ],
+    "failedOptionalProbeNames": [],
+    "flags": {
+      "dcrBlockedByRedirectAllowlist": true,
+      "authorizeBlockedByRedirectAllowlist": false,
+      "authorizeBlockedByDevSubject": false,
+      "dcrInteropGap": false,
+      "otherOauthBootstrapGap": false
+    }
+  },
+  "flags": {
+    "dcrBlockedByRedirectAllowlist": true,
+    "authorizeBlockedByRedirectAllowlist": false,
+    "authorizeBlockedByDevSubject": false,
+    "dcrInteropGap": false,
+    "otherOauthBootstrapGap": false
+  },
+  "dcrRegistration": {
+    "attempted": true,
+    "succeeded": false,
+    "clientId": null,
+    "clientName": "ChatGPT Connector",
+    "redirectUris": [],
+    "tokenEndpointAuthMethod": null
+  },
+  "chatgptCustomClient": {
+    "ready": false,
+    "clientId": null,
+    "tokenEndpointAuthMethod": null,
+    "redirectUri": "https://chatgpt.com/connector/oauth/ijq0caHmR1iW",
+    "note": ""
+  },
+  "passed": 6,
+  "failed": 5,
+  "results": [
+    {
+      "name": "healthz",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/healthz",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "protected-resource",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/.well-known/oauth-protected-resource",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "openid-configuration",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/.well-known/openid-configuration",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "oauth-authorization-server",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/.well-known/oauth-authorization-server",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "jwks",
+      "required": true,
+      "method": "GET",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/jwks",
+      "expectedStatus": [
+        200
+      ],
+      "status": 200,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "mcp-missing-token",
+      "required": true,
+      "method": "POST",
+      "url": "https://asweknowledgeos-production.up.railway.app/mcp",
+      "expectedStatus": [
+        401
+      ],
+      "status": 401,
+      "passed": true,
+      "notes": []
+    },
+    {
+      "name": "dcr-register",
+      "required": true,
+      "method": "POST",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/register",
+      "expectedStatus": [
+        201
+      ],
+      "status": 400,
+      "passed": false,
+      "notes": [
+        "Expected HTTP status in [201], got 400.",
+        "DCR redirect URI rejected by deployment allowlist; OAUTH_ALLOWED_REDIRECT_URIS may be unset or missing this callback."
+      ]
+    },
+    {
+      "name": "authorize-approve",
+      "required": true,
+      "method": "POST",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/authorize",
+      "expectedStatus": [],
+      "status": null,
+      "passed": false,
+      "notes": [
+        "Skipped because DCR did not produce a usable client_id."
+      ]
+    },
+    {
+      "name": "token",
+      "required": true,
+      "method": "POST",
+      "url": "https://asweknowledgeos-production.up.railway.app/oauth/token",
+      "expectedStatus": [],
+      "status": null,
+      "passed": false,
+      "notes": [
+        "Skipped because authorization code flow did not complete."
+      ]
+    },
+    {
+      "name": "mcp-initialize",
+      "required": true,
+      "method": "POST",
+      "url": "https://asweknowledgeos-production.up.railway.app/mcp",
+      "expectedStatus": [],
+      "status": null,
+      "passed": false,
+      "notes": [
+        "Skipped because no usable access token is available."
+      ]
+    },
+    {
+      "name": "mcp-read-smoke",
+      "required": true,
+      "method": "POST",
+      "url": "https://asweknowledgeos-production.up.railway.app/mcp",
+      "expectedStatus": [],
+      "status": null,
+      "passed": false,
+      "notes": [
+        "Skipped because no usable access token is available for list_tree."
+      ]
+    }
+  ]
+}

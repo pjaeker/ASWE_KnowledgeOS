@@ -436,6 +436,80 @@ function resultNotesContain(result, pattern) {
   return notes.some((note) => pattern.test(String(note || "")));
 }
 
+function getResultByName(results, name) {
+  return results.find((result) => result.name === name) || null;
+}
+
+function getFailedProbeNames(results, predicate = () => true) {
+  return results
+    .filter((result) => !result.passed && predicate(result))
+    .map((result) => result.name);
+}
+
+function classifyBootstrapSummary(results, options) {
+  const coreBootstrapProbeNames = [
+    "healthz",
+    "protected-resource",
+    "openid-configuration",
+    "oauth-authorization-server",
+    "jwks",
+    "mcp-missing-token"
+  ];
+  const dcrBlockedByRedirectAllowlist = results.some(
+    (result) =>
+      result.name === "dcr-register" && resultNotesContain(result, /OAUTH_ALLOWED_REDIRECT_URIS|allowlist/i)
+  );
+  const authorizeBlockedByRedirectAllowlist = results.some(
+    (result) =>
+      result.name === "authorize-approve" &&
+      resultNotesContain(result, /OAUTH_ALLOWED_REDIRECT_URIS|allowlist/i)
+  );
+  const authorizeBlockedByDevSubject = results.some(
+    (result) => result.name === "authorize-approve" && resultNotesContain(result, /OAUTH_DEV_SUBJECT/i)
+  );
+  const dcrResult = getResultByName(results, "dcr-register");
+  const coreBootstrapGreen = coreBootstrapProbeNames.every(
+    (name) => getResultByName(results, name)?.passed === true
+  );
+  const failedRequiredProbeNames = getFailedProbeNames(results, (result) => result.required);
+  const failedOptionalProbeNames = getFailedProbeNames(results, (result) => !result.required);
+
+  let primary = "green";
+  let reason = "All requested bridge bootstrap probes passed.";
+
+  if (dcrBlockedByRedirectAllowlist || authorizeBlockedByRedirectAllowlist) {
+    primary = "allowlist-mismatch";
+    reason = `The exact redirect URI '${options.redirectUri}' is not currently allowlisted in OAUTH_ALLOWED_REDIRECT_URIS.`;
+  } else if (authorizeBlockedByDevSubject) {
+    primary = "missing-dev-subject";
+    reason =
+      "OAUTH_DEV_SUBJECT is missing, so the development authorization bootstrap cannot issue authorization codes.";
+  } else if (options.probeDcr && dcrResult && !dcrResult.passed && coreBootstrapGreen) {
+    primary = "dcr-interop-gap";
+    reason =
+      `Core discovery/bootstrap probes are green, but POST /oauth/register still failed for redirect URI '${options.redirectUri}'.`;
+  } else if (failedRequiredProbeNames.length > 0 || failedOptionalProbeNames.length > 0) {
+    primary = "other-oauth-bootstrap-gap";
+    reason =
+      "At least one requested OAuth/bootstrap probe failed outside the redirect allowlist and OAUTH_DEV_SUBJECT guardrails.";
+  }
+
+  return {
+    primary,
+    reason,
+    coreBootstrapGreen,
+    failedRequiredProbeNames,
+    failedOptionalProbeNames,
+    flags: {
+      dcrBlockedByRedirectAllowlist,
+      authorizeBlockedByRedirectAllowlist,
+      authorizeBlockedByDevSubject,
+      dcrInteropGap: primary === "dcr-interop-gap",
+      otherOauthBootstrapGap: primary === "other-oauth-bootstrap-gap"
+    }
+  };
+}
+
 function extractAuthorizationCode(locationHeader) {
   try {
     return new URL(String(locationHeader || "")).searchParams.get("code") || "";
@@ -487,6 +561,7 @@ async function main() {
   let clientId = "";
   let authorizationCode = "";
   let codeVerifier = "";
+  let dcrRegistration = null;
 
   results.push(
     (
@@ -717,6 +792,27 @@ async function main() {
 
     results.push(dcrProbe.result);
     clientId = String(dcrProbe.jsonBody?.client_id || "");
+    dcrRegistration = {
+      attempted: true,
+      succeeded: Boolean(clientId),
+      clientId: clientId || null,
+      clientName: String(dcrProbe.jsonBody?.client_name || options.clientName || ""),
+      redirectUris: Array.isArray(dcrProbe.jsonBody?.redirect_uris)
+        ? dcrProbe.jsonBody.redirect_uris
+        : [],
+      tokenEndpointAuthMethod: dcrProbe.jsonBody?.token_endpoint_auth_method || null
+    };
+  }
+
+  if (!dcrRegistration) {
+    dcrRegistration = {
+      attempted: Boolean(options.probeDcr),
+      succeeded: false,
+      clientId: null,
+      clientName: options.clientName,
+      redirectUris: [],
+      tokenEndpointAuthMethod: null
+    };
   }
 
   if (options.fullAuth) {
@@ -968,25 +1064,36 @@ async function main() {
     }
   }
 
+  const classification = classifyBootstrapSummary(results, options);
   const summary = {
     baseUrl,
     outDir,
+    input: {
+      clientName: options.clientName,
+      redirectUri: options.redirectUri,
+      scope: options.scope,
+      readRepo: options.readRepo,
+      readPath: options.readPath
+    },
     mode: {
       probeDcr: options.probeDcr,
       fullAuth: options.fullAuth,
       readSmoke: options.readSmoke,
       accessTokenProvided: Boolean(options.accessToken)
     },
+    classification,
     flags: {
-      dcrBlockedByRedirectAllowlist: results.some((result) =>
-        result.name === "dcr-register" && resultNotesContain(result, /OAUTH_ALLOWED_REDIRECT_URIS|allowlist/i)
-      ),
-      authorizeBlockedByRedirectAllowlist: results.some((result) =>
-        result.name === "authorize-approve" && resultNotesContain(result, /OAUTH_ALLOWED_REDIRECT_URIS|allowlist/i)
-      ),
-      authorizeBlockedByDevSubject: results.some((result) =>
-        result.name === "authorize-approve" && resultNotesContain(result, /OAUTH_DEV_SUBJECT/i)
-      )
+      ...classification.flags
+    },
+    dcrRegistration,
+    chatgptCustomClient: {
+      ready: Boolean(dcrRegistration.clientId),
+      clientId: dcrRegistration.clientId,
+      tokenEndpointAuthMethod: dcrRegistration.tokenEndpointAuthMethod,
+      redirectUri: options.redirectUri,
+      note: dcrRegistration.clientId
+        ? "If ChatGPT UI DCR still misbehaves, reuse this public client_id with the static 'Benutzerdefinierter OAuth-Client' path."
+        : ""
     },
     passed: results.filter((result) => result.passed).length,
     failed: results.filter((result) => !result.passed).length,

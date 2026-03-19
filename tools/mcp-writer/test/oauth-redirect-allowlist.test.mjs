@@ -5,6 +5,7 @@ import { toErrorPayload } from "../src/errors.js";
 import { createOAuthService } from "../src/oauth/server.js";
 
 const ALLOWLISTED_REDIRECT_URI = "https://chat.openai.com/aip/callback";
+const CHATGPT_CONNECTOR_REDIRECT_URI = "https://chatgpt.com/connector/oauth/test-connector";
 const BLOCKED_REDIRECT_URI = "https://example.com/callback";
 
 function createTestConfig(overrides = {}) {
@@ -110,6 +111,43 @@ const cases = [
         assert.equal(typeof json.client_id, "string");
         assert.deepEqual(json.redirect_uris, [ALLOWLISTED_REDIRECT_URI]);
       });
+    }
+  },
+  {
+    name: "register and authorize accept an exact allowlisted chatgpt.com connector callback",
+    async run() {
+      await withOAuthServer(
+        {
+          oauth: {
+            allowedRedirectUris: [ALLOWLISTED_REDIRECT_URI, CHATGPT_CONNECTOR_REDIRECT_URI]
+          }
+        },
+        async ({ baseUrl }) => {
+          const { response, json } = await registerClient(baseUrl, CHATGPT_CONNECTOR_REDIRECT_URI);
+
+          assert.equal(response.status, 201);
+          assert.deepEqual(json.redirect_uris, [CHATGPT_CONNECTOR_REDIRECT_URI]);
+
+          const authorizeResponse = await fetch(`${baseUrl}/oauth/authorize`, {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            redirect: "manual",
+            body: authorizeBody({
+              clientId: json.client_id,
+              redirectUri: CHATGPT_CONNECTOR_REDIRECT_URI
+            })
+          });
+
+          assert.equal(authorizeResponse.status, 302);
+          const location = authorizeResponse.headers.get("location");
+          assert.equal(typeof location, "string");
+          assert.match(location, /^https:\/\/chatgpt\.com\/connector\/oauth\/test-connector\?/);
+          assert.match(location, /[?&]code=/);
+        }
+      );
     }
   },
   {

@@ -75,8 +75,9 @@ See `.env.example`.
 
 Key OAuth notes:
 - `PUBLIC_BASE_URL` keeps discovery URLs stable behind Railway.
-- `OAUTH_ALLOWED_REDIRECT_URIS` is a comma- or newline-separated allowlist of absolute callback URLs for DCR and authorization.
-- `OAUTH_DEV_SUBJECT` enables development authorization codes for the thin-slice flow.
+- `OAUTH_ALLOWED_REDIRECT_URIS` is a comma- or newline-separated allowlist of exact absolute callback URLs for DCR and authorization. Do not use wildcards or host-only patterns.
+- `OAUTH_DEV_SUBJECT` enables development authorization codes for the thin-slice flow and is required before `/oauth/authorize` will issue codes.
+- A successful DCR response registers a public client with `token_endpoint_auth_method=none`, which can also be reused through ChatGPT's static custom OAuth client path while the thin-slice server process remains live.
 - `OAUTH_JWT_PRIVATE_KEY` is optional; if omitted, the service generates an ephemeral signing key at boot.
 
 ## AuthN / AuthZ / Policy
@@ -124,7 +125,7 @@ curl -X POST https://YOUR-DOMAIN/oauth/register \
   -H "Content-Type: application/json" \
   -d '{
     "client_name": "ChatGPT Connector",
-    "redirect_uris": ["https://chat.openai.com/aip/callback"],
+    "redirect_uris": ["https://chatgpt.com/connector/oauth/YOUR_CONNECTOR_ID"],
     "scope": "openid mcp.read",
     "grant_types": ["authorization_code"],
     "response_types": ["code"],
@@ -206,6 +207,33 @@ It verifies key bootstrap variables such as `PUBLIC_BASE_URL`, `PORT`, `OAUTH_AL
 `set_env.ps1` now forwards `OAUTH_ALLOWED_REDIRECT_URIS` too, so the CLI upload path matches the stricter OAuth bootstrap contract.
 
 `doctor_readonly.ps1` also reuses that bootstrap inspection and surfaces redirect-allowlist blockers separately from `OAUTH_DEV_SUBJECT`.
+
+## ChatGPT Custom App bootstrap
+
+Use this operator path when ChatGPT App Create shows a concrete callback such as `https://chatgpt.com/connector/oauth/<connector-id>` and you want a small, exact-match bootstrap flow.
+
+1. Start ChatGPT Custom App creation and copy the exact callback URL shown by the UI.
+   Current live evidence used `https://chatgpt.com/connector/oauth/ijq0caHmR1iW`.
+2. Inspect the active Railway allowlist and exact-match status without mutating anything:
+   `pwsh ./scripts/railway/inspect_bootstrap_readonly.ps1 -RedirectUri "https://chatgpt.com/connector/oauth/<connector-id>"`
+3. If the callback is missing, append only that exact URI without overwriting existing allowlist entries:
+   `pwsh ./scripts/railway/set_env.ps1 -Service <service-from-railway.target.json> -Environment production -OnlyAllowedRedirectUris -AppendAllowedRedirectUri "https://chatgpt.com/connector/oauth/<connector-id>" -DryRun`
+4. Apply the append once the dry run looks correct:
+   `pwsh ./scripts/railway/set_env.ps1 -Service <service-from-railway.target.json> -Environment production -OnlyAllowedRedirectUris -AppendAllowedRedirectUri "https://chatgpt.com/connector/oauth/<connector-id>"`
+5. Re-run the host-neutral probe against that exact callback:
+   `node ./scripts/railway/bridge_readiness_probe.mjs --base-url https://YOUR-DOMAIN --redirect-uri "https://chatgpt.com/connector/oauth/<connector-id>" --full-auth --read-smoke`
+6. Interpret the probe summary:
+   - `allowlist-mismatch`: the exact callback is still missing from `OAUTH_ALLOWED_REDIRECT_URIS`.
+   - `missing-dev-subject`: set `OAUTH_DEV_SUBJECT` before expecting `/oauth/authorize` to issue codes.
+   - `dcr-interop-gap`: discovery and baseline OAuth probes are green, but `POST /oauth/register` still fails for that exact callback.
+   - `other-oauth-bootstrap-gap`: another metadata or bootstrap issue still needs diagnosis.
+
+Use DCR directly when ChatGPT can complete RFC 7591 registration itself.
+
+Use the static `Benutzerdefinierter OAuth-Client` path when the probe registers successfully but the ChatGPT UI still reports that the server does not support RFC 7591. In that case, reuse the `dcrRegistration.clientId` from `bridge_readiness_probe.mjs`; the current thin slice registers a public client with `token_endpoint_auth_method=none`, so no client secret is expected.
+
+The legacy callback `https://chat.openai.com/aip/callback` can still be probed explicitly in the same way when you need parity with older evidence:
+`node ./scripts/railway/bridge_readiness_probe.mjs --base-url https://YOUR-DOMAIN --redirect-uri "https://chat.openai.com/aip/callback" --full-auth --read-smoke`
 
 For a local OAuth guardrail smoke, run:
 `npm run test:oauth`

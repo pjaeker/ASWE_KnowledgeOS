@@ -1,0 +1,1 @@
+{"client_id":"client_6db6d14e50c42a199cf092a7bff63a53","client_id_issued_at":1773916331,"client_secret_expires_at":0,"redirect_uris":["https://chatgpt.com/connector/oauth/ijq0caHmR1iW"],"grant_types":["authorization_code"],"response_types":["code"],"token_endpoint_auth_method":"none","scope":"openid mcp.read","client_name":"ChatGPT Connector","application_type":"web"}
