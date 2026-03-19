@@ -1,0 +1,7 @@
+{
+  "access_token": "<redacted>",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "scope": "openid mcp.read",
+  "id_token": "<redacted>"
+}

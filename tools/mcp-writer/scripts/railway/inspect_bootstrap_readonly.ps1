@@ -1,6 +1,7 @@
 param(
   [string]$TargetConfigPath = "",
   [string]$RailwayBin = "railway",
+  [string]$RedirectUri = "",
   [switch]$EmitJson,
   [switch]$RequireAuthorizeBootstrap
 )
@@ -197,6 +198,38 @@ function Get-AbsoluteUrlListSnapshot {
   return $snapshot
 }
 
+function Get-RequestedRedirectSnapshot {
+  param(
+    [AllowEmptyString()]
+    [string]$RedirectUri,
+
+    [Parameter(Mandatory = $true)]
+    [object]$AllowlistSnapshot
+  )
+
+  $requested = [string]$RedirectUri
+  $normalized = ""
+  $validAbsoluteUrl = $false
+
+  if (-not [string]::IsNullOrWhiteSpace($requested)) {
+    $parsedUri = $null
+    if ([System.Uri]::TryCreate($requested, [System.UriKind]::Absolute, [ref]$parsedUri)) {
+      $normalized = $parsedUri.AbsoluteUri
+      $validAbsoluteUrl = $true
+    }
+  }
+
+  $exactMatch = $validAbsoluteUrl -and (@($AllowlistSnapshot.entries) -contains $normalized)
+
+  return [pscustomobject]@{
+    requested = $requested
+    normalized = $normalized
+    provided = (-not [string]::IsNullOrWhiteSpace($requested))
+    validAbsoluteUrl = $validAbsoluteUrl
+    exactMatch = $exactMatch
+  }
+}
+
 if (-not $TargetConfigPath) {
   $TargetConfigPath = "tools/mcp-writer/config/railway.target.json"
 }
@@ -225,6 +258,13 @@ $summary = [ordered]@{
     variableListOk = $false
     authorizeBootstrapReady = $false
     blockers = @()
+  }
+  requestedRedirect = [ordered]@{
+    requested = [string]$RedirectUri
+    normalized = ""
+    provided = (-not [string]::IsNullOrWhiteSpace($RedirectUri))
+    validAbsoluteUrl = $false
+    exactMatch = $false
   }
   variables = [ordered]@{}
 }
@@ -274,6 +314,14 @@ if (-not $railwayCommandPath) {
       $summary.inspection.blockers += "OAUTH_ALLOWED_REDIRECT_URIS contains invalid absolute URLs."
     }
 
+    $summary.requestedRedirect = Get-RequestedRedirectSnapshot -RedirectUri $RedirectUri -AllowlistSnapshot $summary.variables.OAUTH_ALLOWED_REDIRECT_URIS
+
+    if ($summary.requestedRedirect.provided -and (-not $summary.requestedRedirect.validAbsoluteUrl)) {
+      $summary.inspection.blockers += "Requested redirect URI is not a valid absolute URL."
+    } elseif ($summary.requestedRedirect.provided -and (-not $summary.requestedRedirect.exactMatch)) {
+      $summary.inspection.blockers += "Requested redirect URI is not currently present in OAUTH_ALLOWED_REDIRECT_URIS."
+    }
+
     if (-not $summary.variables.OAUTH_DEV_SUBJECT.nonEmpty) {
       $summary.inspection.blockers += "OAUTH_DEV_SUBJECT is missing or empty; authorization code bootstrap is blocked."
     }
@@ -282,7 +330,11 @@ if (-not $railwayCommandPath) {
       $summary.variables.PUBLIC_BASE_URL.matchesExpected -and
       $summary.variables.PORT.matchesExpected -and
       ($summary.variables.OAUTH_ALLOWED_REDIRECT_URIS.validAbsoluteUrlCount -gt 0) -and
-      $summary.variables.OAUTH_DEV_SUBJECT.nonEmpty
+      $summary.variables.OAUTH_DEV_SUBJECT.nonEmpty -and
+      (
+        (-not $summary.requestedRedirect.provided) -or
+        $summary.requestedRedirect.exactMatch
+      )
     )
   }
 }
@@ -302,6 +354,18 @@ if ($EmitJson) {
   Write-Host ("OAUTH_ALLOWED_REDIRECT_URIS: {0} ({1} valid absolute URL(s))" -f $summary.variables.OAUTH_ALLOWED_REDIRECT_URIS.status, $summary.variables.OAUTH_ALLOWED_REDIRECT_URIS.validAbsoluteUrlCount)
   Write-Host ("OAUTH_DEFAULT_SCOPE: {0}" -f $summary.variables.OAUTH_DEFAULT_SCOPE.status)
   Write-Host ("OAUTH_DEV_SUBJECT: {0}" -f $summary.variables.OAUTH_DEV_SUBJECT.status)
+
+  foreach ($entry in @($summary.variables.OAUTH_ALLOWED_REDIRECT_URIS.entries)) {
+    Write-Host ("Active redirect URI: {0}" -f $entry)
+  }
+
+  if ($summary.requestedRedirect.provided) {
+    Write-Host ("Requested redirect URI valid: {0}" -f $summary.requestedRedirect.validAbsoluteUrl)
+    Write-Host ("Requested redirect URI exact match: {0}" -f $summary.requestedRedirect.exactMatch)
+    if ($summary.requestedRedirect.normalized) {
+      Write-Host ("Requested redirect URI normalized: {0}" -f $summary.requestedRedirect.normalized)
+    }
+  }
 
   foreach ($blocker in @($summary.inspection.blockers)) {
     Write-Host ("Blocker: {0}" -f $blocker)

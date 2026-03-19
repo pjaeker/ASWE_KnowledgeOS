@@ -1,0 +1,1 @@
+{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-03-26","capabilities":{"tools":{}},"serverInfo":{"name":"aswe-mcp-writer","version":"0.2.0"},"instructions":"Use OAuth discovery from /.well-known/oauth-protected-resource. Authorization server endpoints follow under /oauth in the next slice."}}
