@@ -1,0 +1,3 @@
+interface:
+  display_name: "Multiagent Orchestration Planner"
+  short_description: "Route the task first, then design the smallest safe agent structure, information flow, and execution environment."
