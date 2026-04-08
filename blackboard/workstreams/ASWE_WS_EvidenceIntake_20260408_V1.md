@@ -1,7 +1,7 @@
 ---
 project: ASWE_KnowledgeOS
 doc_type: workstream
-version: V1
+version: V2
 date: 2026-04-08
 status: draft
 audience: [human, llm]
@@ -41,6 +41,13 @@ Neue Evidenz kontrolliert aufnehmen, normalisieren und bis zur Trigger-Reife str
 - Claim Pack
 - Conflict Cluster
 - Trigger Packet
+
+## Naechster Thin Slice
+Der erste bounded Lauf in der Codex App soll mindestens erzeugen:
+- 1 Observation Pack
+- 1 Claim Pack
+- 1 Conflict Cluster oder explizit `no-conflict`
+- 1 Trigger-Entscheidung
 
 ## Erfolgskriterium
 Der Pfad ist erfolgreich, wenn belastbare Trigger fuer SemanticEvolution erzeugt werden,
