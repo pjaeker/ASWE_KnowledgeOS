@@ -56,6 +56,33 @@ Nutze diese Reihenfolge:
 - CI und Writer bleiben die harten Governance-Layer.
 - Legacy-Prompt-Dateien sind kein primaerer GUI-Weg.
 
+## Architecture Evolution / Codex-App Sonderfall
+
+Wenn die Session explizit auf `ArchitectureEvolution` mit Fokus auf `EvidenceIntake` und `SemanticEvolution` laeuft, lies nach `ENTRY_LATEST -> RepoStatusUpdate -> Workstream` zusaetzlich:
+
+1. `handbook/reference/ASWE_Erkenntnisprozess_Rollenmodell_20260408_V1.md`
+2. `handbook/protocol/ASWE_BoundedAutonomy_Orchestrierungsprotokoll_20260408_V1.md`
+3. `handbook/protocol/ASWE_CodexApp_AutonomousStart_E2E_20260408_V1.md`
+4. `blackboard/workstreams/ASWE_WS_ArchitectureEvolution_20260408_V1.md`
+5. `blackboard/workstreams/ASWE_WS_EvidenceIntake_20260408_V1.md`
+6. `handbook/reference/ASWE_EvidenceIntake_Methodenmodell_20260408_V1.md`
+7. `handbook/reference/ASWE_EvidenceIntake_RoleContract_20260408_V1.md`
+8. `blackboard/workstreams/ASWE_WS_SemanticEvolution_20260408_V1.md`
+9. `handbook/reference/ASWE_SemanticEvolution_Methodenmodell_20260408_V1.md`
+10. `handbook/reference/ASWE_SemanticEvolution_RoleContract_20260408_V1.md`
+11. `handbook/reference/ASWE_CodexApp_StartContract_20260408_V1.md`
+
+Wenn die Arbeit in der Codex App ausgefuehrt wird, nutze ausserdem als thread-lokale Operating Guidance:
+- `handbook/reference/ASWE_CodexApp_EvidenceIntake_Systemprompt_20260408_V1.md`
+- `handbook/reference/ASWE_CodexApp_SemanticEvolution_Systemprompt_20260408_V1.md`
+
+Invarianten fuer diesen Sonderfall:
+- `EvidenceIntake` und `SemanticEvolution` werden als drei-Thread-Topologie mit `Architecture Evolution - Umbrella` parallel eingerichtet.
+- `EvidenceIntake` bleibt epistemisch der erste produktive Primaerpfad.
+- keine finale SSOT-Umschreibung durch bounded Rollen
+- kein neuer Writer-Pfad
+- `.codex`-Materialisierung nur nach nachgewiesenem Mehrwert
+
 ## Standard-Tasks in VS Code
 
 - `ASWE: Bootstrap (Read Entry + Status + WS)`

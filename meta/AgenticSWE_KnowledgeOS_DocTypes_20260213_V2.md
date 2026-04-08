@@ -1,7 +1,7 @@
 ---
 project: AgenticSWE
 doc_type: doc_types
-version: V1
+version: V2
 date: 2026-02-13
 status: draft
 audience: [human, llm]
@@ -28,6 +28,9 @@ Es ist eine Referenz fuer:
 
 ### Reference
 Neutrale, konsultierbare Struktur- oder Nachschlagedarstellung ohne operativen Ablaufzwang.
+
+### Protocol
+Geordnete Uebergangs-, Aktivierungs-, Handoff- oder Zustandslogik mit expliziten Start-, Stop- und Rueckgabebedingungen.
 
 ### How-to
 Kurze Handlungsanleitung fuer ein konkretes Ziel.
@@ -79,14 +82,23 @@ Beispiele:
 - `ASWE_WS_ArchitectureEvolution_20260402_V1.md`
 - `ASWE_WS_EvidenceIntake_20260402_V1.md`
 
-### 3.3 Stabile Einstiegspunkte
+### 3.3 Protokolle
+Bevorzugtes Muster fuer Protokolle:
+
+`ASWE_<Kerngegenstand>_Protocol_YYYYMMDD_Vn.md`
+
+Beispiele:
+- `ASWE_CodexApp_AutonomousStart_E2E_20260408_V1.md`
+- `ASWE_BoundedAutonomy_Orchestrierungsprotokoll_20260408_V1.md`
+
+### 3.4 Stabile Einstiegspunkte
 Feste Einstiegspunkte duerfen kurze Standardnamen behalten, wenn ihre Funktion genau darin besteht, leicht auffindbare Start- oder Adapterdokumente zu sein.
 
 Beispiele:
 - `README.md`
 - `AGENTS.md`
 
-### 3.4 Verbindlichkeitsregel
+### 3.5 Verbindlichkeitsregel
 - Repo-lokale Dokumente bleiben die kanonische Quelle.
 - Die Benennungsregel ist eine bevorzugte repo-lokale Konvention.
 - Repo-spezifische Overrides bleiben zulaessig, wenn sie bewusst entschieden und dokumentiert sind.
