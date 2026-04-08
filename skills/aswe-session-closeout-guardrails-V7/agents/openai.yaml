@@ -1,0 +1,3 @@
+interface:
+  display_name: ASWE Session Closeout Guardrails
+  short_description: Package-first closeout for ASWE repos with explicit PR-deferred flow
