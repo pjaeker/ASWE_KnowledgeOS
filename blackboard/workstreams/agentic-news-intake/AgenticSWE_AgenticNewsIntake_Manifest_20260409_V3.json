@@ -1,0 +1,111 @@
+{
+  "workstream_id": "ws-agentic-news-intake",
+  "title": "Agentic SWE News Intake",
+  "project": "AgenticSWE_KnowledgeOS",
+  "status": "active",
+  "date": "2026-04-09",
+  "version": "V3",
+  "repo_target_path": "blackboard/workstreams/agentic-news-intake/",
+  "purpose": "Fortgefuehrter Blackboard-Workstream fuer Chat-abgeleiteten News-/Literatur-Intake mit spaeterer Promotion nach Library/Handbook/Templates.",
+  "source_count": 81,
+  "entrypoint": "AgenticSWE_AgenticNewsIntake_START_HERE_20260409_V3.md",
+  "read_order": [
+    "AgenticSWE_AgenticNewsIntake_START_HERE_20260409_V3.md",
+    "AgenticSWE_AgenticNewsIntake_Manifest_20260409_V3.json",
+    "AgenticSWE_AgenticNewsIntake_ConnectorIndex_20260409_V3.json",
+    "AgenticSWE_AgenticNewsIntake_SourceRegister_20260409_V3.csv",
+    "AgenticSWE_AgenticNewsIntake_ClaimPack_20260409_V3.md",
+    "AgenticSWE_AgenticNewsIntake_Handoff_20260409_V3.md"
+  ],
+  "router_rule": "Genau ein START_HERE-Dokument ist der kanonische Einstiegspunkt fuer die naechste Session.",
+  "ssot_locator": {
+    "glossary_glob": "meta/*Glossary*_V*.md",
+    "taxonomy_glob": "meta/*Taxonomy*_V*.md",
+    "meaningmap_glob": "meta/*MeaningMap*_V*.md",
+    "diataxis_policy_glob": "handbook/**/*Diataxis*Policy*_V*.md"
+  },
+  "formats": {
+    "markdown": "Mensch-/LLM-lesbare Navigations-, Handoff- und Source-Card-Dateien.",
+    "json": "Maschinenlesbarer Zustand und Connector-Routing.",
+    "csv": "Deduplizierbarer Quellenkatalog fuer schnelle Filterung.",
+    "jsonl": "Append-only Event-/Search-Log."
+  },
+  "field_contract": {
+    "required_source_register_fields": [
+      "source_id",
+      "title",
+      "url",
+      "source_type",
+      "publisher_class",
+      "source_date",
+      "tier_research",
+      "fulltext_status",
+      "chat_covered",
+      "needs_recheck",
+      "dedupe_key",
+      "promotion_target",
+      "handbook_delta",
+      "notes_short"
+    ],
+    "allowed_promotion_target": [
+      "blackboard_only",
+      "library_only",
+      "handbook_candidate",
+      "template_candidate"
+    ],
+    "allowed_handbook_delta": [
+      "low",
+      "low_medium",
+      "medium",
+      "medium_high",
+      "high",
+      "very_high"
+    ],
+    "allowed_fulltext_status": [
+      "snippet-only",
+      "readme-reviewed",
+      "readme-plus-selected-files",
+      "page-reviewed",
+      "fulltext-reviewed",
+      "pdf-reviewed-in-chat",
+      "readme-plus-docs-reviewed",
+      "readme-plus-openapi-changelog",
+      "readme-plus-architecture-security",
+      "readme-plus-sample-agent-reviewed"
+    ]
+  },
+  "dedupe_rules": [
+    "arxiv -> arxiv:<id>",
+    "github repo -> github:<owner>/<repo>",
+    "social post -> platform-specific id",
+    "blog/docs -> canonical URL without tracking params",
+    "uploaded file -> file:<filename>",
+    "deployment surface -> derive from underlying repo or directory when method/contents are not independent"
+  ],
+  "workflow_rules": [
+    "Neue Quellen zuerst in SourceRegister.csv aufnehmen.",
+    "Jeden Intake-Schritt in SearchLog.jsonl protokollieren.",
+    "Neue Source Cards nur bei echtem Mehrwert erstellen.",
+    "Promotion nicht implizit, sondern ueber ClaimPack begruenden.",
+    "Ohne eindeutiges Glossar-/Taxonomie-Mapping keine Promotion.",
+    "Derived surfaces und Duplicates nicht als neue Primaerquellen eintragen."
+  ],
+  "closeout_delta": {
+    "new_unique_sources": 41,
+    "duplicates_suppressed": 1,
+    "derived_surfaces_suppressed": 1,
+    "source_cards_created": 4
+  },
+  "artifacts": {
+    "session_archive": "AgenticSWE_AgenticNewsIntake_SessionArchive_20260409_V3.md",
+    "handoff": "AgenticSWE_AgenticNewsIntake_Handoff_20260409_V3.md",
+    "next_session_prompt": "AgenticSWE_AgenticNewsIntake_NextSessionPrompt_20260409_V3.md",
+    "connector_index": "AgenticSWE_AgenticNewsIntake_ConnectorIndex_20260409_V3.json",
+    "source_register": "AgenticSWE_AgenticNewsIntake_SourceRegister_20260409_V3.csv",
+    "reading_queue": "AgenticSWE_AgenticNewsIntake_ReadingQueue_20260409_V3.md",
+    "search_log": "AgenticSWE_AgenticNewsIntake_SearchLog_20260409_V2.jsonl",
+    "claim_pack": "AgenticSWE_AgenticNewsIntake_ClaimPack_20260409_V3.md",
+    "sources_dir": "sources/",
+    "import_guide": "IMPORT_INTO_REPO.md"
+  }
+}
