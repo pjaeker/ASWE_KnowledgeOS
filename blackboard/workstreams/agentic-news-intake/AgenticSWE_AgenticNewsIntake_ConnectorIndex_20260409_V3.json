@@ -1,0 +1,34 @@
+{
+  "index_id": "connector-agentic-news-intake-v3",
+  "goal": "Fast, low-friction Einstieg fuer Agenten mit GitHub-Connector bei beibehaltener Single-Router-Regel nach dem Closeout 2026-04-09.",
+  "read_first": [
+    "AgenticSWE_AgenticNewsIntake_START_HERE_20260409_V3.md",
+    "AgenticSWE_AgenticNewsIntake_Manifest_20260409_V3.json",
+    "AgenticSWE_AgenticNewsIntake_SourceRegisterDelta_20260409_V3.csv",
+    "AgenticSWE_AgenticNewsIntake_ClaimPack_20260409_V3.md",
+    "AgenticSWE_AgenticNewsIntake_ReadingQueue_20260409_V3.md"
+  ],
+  "open_minimally": [
+    "Nur benoetigte Source Cards oeffnen.",
+    "Vor dem Oeffnen einer neuen URL zuerst im Basis-Register V2 und dann im Delta-Register V3 nach dedupe_key suchen.",
+    "Deployment surfaces nur als derived surface behandeln, wenn das zugrunde liegende Repo bereits erfasst ist.",
+    "Bei grossen Intake-Batches zuerst ReadingQueue und ClaimPack lesen statt sofort neue Promotion abzuleiten."
+  ],
+  "high_priority_filters": {
+    "needs_recheck": "yes",
+    "handbook_delta": ["high", "very_high", "medium_high"],
+    "promotion_target": ["handbook_candidate", "template_candidate"]
+  },
+  "write_targets": [
+    "AgenticSWE_AgenticNewsIntake_SourceRegisterDelta_20260409_V3.csv",
+    "AgenticSWE_AgenticNewsIntake_SearchLog_20260409_V2.jsonl",
+    "AgenticSWE_AgenticNewsIntake_ClaimPack_20260409_V3.md",
+    "AgenticSWE_AgenticNewsIntake_ReadingQueue_20260409_V3.md",
+    "sources/"
+  ],
+  "never_write_targets": [
+    "library/",
+    "handbook/",
+    "templates/"
+  ]
+}
