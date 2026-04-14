@@ -1,0 +1,5 @@
+# Candidate requirements for Evidence-Intake self-evolution; add-only review artifact; not auto-loaded.
+
+allowed_approval_policies = ["never"]
+allowed_sandbox_modes = ["workspace-write"]
+allowed_web_search_modes = ["cached", "live"]
