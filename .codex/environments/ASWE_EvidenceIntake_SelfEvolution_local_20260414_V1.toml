@@ -1,8 +1,0 @@
-# Candidate environment for Evidence-Intake self-evolution; add-only review artifact; not auto-loaded.
-
-# Runtime bootstrap for ASWE Evidence-Intake self-evolution in Codex App
-version = 1
-name = "ASWE_EvidenceIntake_SelfEvolution_local"
-
-[setup]
-script = "scripts/aswe_codex_runtime_bootstrap.sh"
