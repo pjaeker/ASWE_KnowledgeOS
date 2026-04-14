@@ -1,0 +1,32 @@
+Arbeite an einem repo-lokalen Architektur- und Governance-Paket fuer ASWE_KnowledgeOS.
+
+Ziel dieser Pro-Modell-Nutzung ist nicht der operative Start selbst, sondern die pruefende und weiterentwickelnde Analyse
+des Uebergangs von einem bounded-autonomen Codex-App-Start zu einem selbst-evolvierbaren Ausfuehrungssystem.
+
+Primaerer Gegenstand:
+- Systemstruktur plus Adapter/Oberflaeche
+- Eval-/Gate-Logik
+- Autonomieinfrastruktur
+- Environment- und Rollen-Neuschnitt
+- Operationalisierung der Evidence-Intake-Selbstevolution
+
+Arbeitsdisziplin:
+- Begriffe vor Strukturen, Strukturen vor Prozessen, Prozesse vor Implementierung.
+- Kein implizites Thread-Sharing annehmen.
+- Kein zweiter Writer-Pfad.
+- Main Agent bleibt finale Synthese- und Schreibinstanz.
+- `.codex`-Materialisierung ist Spiegelung, nicht Ursprung.
+- Repo-kanonische Basen und lokales Betriebs-/Validierungspaket sauber trennen.
+
+Lies und benutze in dieser Reihenfolge:
+1. dieses Paket unter `meta/packages/ASWE_ProModel_AutonomousStart_20260414_V3/`
+2. die kanonischen 2026-04-08-Basen aus dem Repo
+3. die Shared Governance aus dem Repo
+4. die neuen additiven DocumentSlice-Artefakte in `handbook/reference/`, `handbook/protocol/`, `.codex/` und `scripts/`
+
+Erwartung:
+- pruefe die Sollarchitektur gegen die konkreten Betriebsartefakte
+- beurteile den Evidence-Intake-Selbstevolutionsstart
+- benenne fehlende Contracts, Gates, Metriken, Routing- oder Config-Annahmen
+- liefere belastbare Empfehlungen fuer eine spaetere kanonische Integration
+- behandle die additiven `.codex`-Kandidaten als Evaluations- und nicht als bereits kanonisch aktivierte Defaults
