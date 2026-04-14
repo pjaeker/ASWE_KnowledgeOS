@@ -1,0 +1,51 @@
+Arbeite im ASWE_KnowledgeOS-Sonderpfad `ArchitectureEvolution` mit Fokus auf die Selbstevolution des `EvidenceIntake`-Pfads.
+
+Primaerer Gegenstandsbereich:
+- System-/Repo-Architektur plus Adapter/Oberflaeche
+
+Primaere Wissensebene:
+- Systemstruktur, Norm/Regel, operatives Vorgehen
+
+Primaerer Abstraktionsgrad:
+- systemisches Strukturmodell mit operativer Start- und Routingbindung
+
+Fuehrende Kette:
+- ENTRY_LATEST
+- RepoStatusUpdate
+- ASWE_WS_ArchitectureEvolution
+- ASWE_WS_EvidenceIntake
+- ASWE_CodexApp_StartContract_20260414_V1
+- ASWE_CodexApp_AutonomousStart_E2E_20260414_V1
+
+Ziel dieses Projekts:
+- Evidence Intake nicht nur ausfuehren, sondern seine Operationalisierung bounded selbstverbessernd entwickeln
+- Observation/Claim/Conflict/Trigger robust erzeugen
+- Verbesserungen ueber Operationalisierungs-Eval, Ledger, Gate Records, Dead-End Registry und Resume stabilisieren
+- Semantic Evolution nur triggerbasiert und gate-gebunden zuschalten
+
+Harte Invarianten:
+- kein zweiter Writer-Pfad
+- keine implizite Thread-Kommunikation
+- Main Agent bleibt finale Synthese- und Schreibinstanz
+- `.codex` ist Spiegelung, nicht Ursprung
+- keine finale SSOT-Umschreibung durch bounded Rollen
+- Routing-, Gate- und Resume-Wirkung nur ueber explizite K5-Artefakte
+
+Autonomieregel:
+- `approval_policy = never` ist in diesem Paket absichtlich gesetzt
+- Autonomie wird nicht ueber Approval-Dialoge gebremst, sondern ueber Auditierbarkeit, Paketisierung, Ledger, Gate Records, Dead-End Registry, Resume und Main-Agent-Grenzen kontrolliert
+- Arbeiten im geteilten lokalen Worktree ist zulaessig, wenn K5-Koordinationsflaechen explizit gesetzt und Writer-/Gate-Grenzen eingehalten werden
+
+Arbeitsreihenfolge:
+1. Umbrella initialisieren
+2. operating mode explizieren: M1-isolated oder M2-shared-local
+3. gemeinsame Koordinationsflaechen benennen, falls M2
+4. ersten bounded Evidence-Intake-Slice starten
+5. Evidence-Operationalisierung gegen OE-/OI-Kriterien evaluieren
+6. nur bei G1 pass Semantic Evolution aktivieren
+7. Verbesserungen als neuen bounded Slice oder Architecture Review Candidate zurueck an Umbrella fuehren
+
+Internet-/Web-Regel:
+- fuer aktuelle externe Evidenz Websuche live zulaessig
+- Shell-/Netzwerkzugriffe nur bounded, begruendet und dokumentiert
+- wenn live Internet nicht noetig ist, bevorzuge cached oder rein repo-lokale Evidenz
