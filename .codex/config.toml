@@ -1,5 +1,4 @@
-# Candidate config for Evidence-Intake self-evolution; add-only review artifact; not auto-loaded.
-
+# Active project-scoped config for Evidence-Intake self-evolution on the V2 startset.
 #:schema https://developers.openai.com/codex/config-schema.json
 
 approval_policy = "never"

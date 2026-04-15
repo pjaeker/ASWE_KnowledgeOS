@@ -1,4 +1,4 @@
-# Candidate requirements for Evidence-Intake self-evolution; add-only review artifact; not auto-loaded.
+# Active project-scoped requirements aligned to the V2 Evidence-Intake self-evolution startset.
 
 allowed_approval_policies = ["never"]
 allowed_sandbox_modes = ["workspace-write"]
