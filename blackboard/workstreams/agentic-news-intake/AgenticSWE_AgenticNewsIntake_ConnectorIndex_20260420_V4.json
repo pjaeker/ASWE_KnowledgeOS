@@ -1,0 +1,46 @@
+{
+  "index_id": "connector-agentic-news-intake-v4",
+  "goal": "Fast, low-friction Einstieg fuer Agenten mit GitHub-Connector bei beibehaltener Single-Router-Regel nach dem V4-Chatbatch.",
+  "read_first": [
+    "AgenticSWE_AgenticNewsIntake_START_HERE_20260420_V4.md",
+    "AgenticSWE_AgenticNewsIntake_Manifest_20260420_V4.json",
+    "AgenticSWE_AgenticNewsIntake_SourceRegisterDelta_20260420_V4.csv",
+    "AgenticSWE_AgenticNewsIntake_ClaimPackDelta_20260420_V4.md",
+    "AgenticSWE_AgenticNewsIntake_ReadingQueueDelta_20260420_V4.md"
+  ],
+  "then_if_needed": [
+    "AgenticSWE_AgenticNewsIntake_START_HERE_20260409_V3.md",
+    "AgenticSWE_AgenticNewsIntake_SourceRegister_20260409_V3.csv",
+    "AgenticSWE_AgenticNewsIntake_ClaimPack_20260409_V3.md",
+    "AgenticSWE_AgenticNewsIntake_ReadingQueue_20260409_V3.md"
+  ],
+  "open_minimally": [
+    "Nur benoetigte neue Quellen oder bestehende Recheck-Anker oeffnen.",
+    "Vor dem Oeffnen einer neuen URL zuerst im V3-Register und danach im V4-Delta nach dedupe_key suchen.",
+    "Social-Snippets ohne belastbaren Inhalt nicht weiter verarbeiten.",
+    "Bei grossen Intake-Batches erst ClaimPack und ReadingQueue lesen statt sofort neue Promotion abzuleiten."
+  ],
+  "high_priority_filters": {
+    "needs_recheck": "yes",
+    "handbook_delta": [
+      "high",
+      "very_high",
+      "medium_high"
+    ],
+    "promotion_target": [
+      "handbook_candidate",
+      "template_candidate"
+    ]
+  },
+  "write_targets_after_manual_import": [
+    "AgenticSWE_AgenticNewsIntake_SourceRegister_20260409_V3.csv oder neues konsolidiertes V4-Register",
+    "AgenticSWE_AgenticNewsIntake_SearchLog_20260409_V2.jsonl",
+    "AgenticSWE_AgenticNewsIntake_ClaimPack_20260409_V3.md oder neues konsolidiertes V4-ClaimPack",
+    "AgenticSWE_AgenticNewsIntake_ReadingQueue_20260409_V3.md oder neues konsolidiertes V4-ReadingQueue-Dokument"
+  ],
+  "never_write_targets": [
+    "library/",
+    "handbook/",
+    "templates/"
+  ]
+}

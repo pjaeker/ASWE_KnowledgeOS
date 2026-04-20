@@ -1,0 +1,101 @@
+{
+  "workstream_id": "ws-agentic-news-intake",
+  "title": "Agentic SWE News Intake",
+  "project": "AgenticSWE_KnowledgeOS",
+  "status": "active",
+  "date": "2026-04-20",
+  "version": "V4",
+  "repo_target_path": "blackboard/workstreams/agentic-news-intake/",
+  "purpose": "Manuell zu integrierender Blackboard-Fortsetzungsbatch fuer Chat-abgeleiteten News- und Literatur-Intake mit spaeterer Promotion nach Library, Handbook und Templates.",
+  "source_count_base": 81,
+  "source_count_delta": 24,
+  "source_count_projected": 105,
+  "entrypoint": "AgenticSWE_AgenticNewsIntake_START_HERE_20260420_V4.md",
+  "read_order": [
+    "AgenticSWE_AgenticNewsIntake_START_HERE_20260420_V4.md",
+    "AgenticSWE_AgenticNewsIntake_Manifest_20260420_V4.json",
+    "AgenticSWE_AgenticNewsIntake_ConnectorIndex_20260420_V4.json",
+    "AgenticSWE_AgenticNewsIntake_SourceRegisterDelta_20260420_V4.csv",
+    "AgenticSWE_AgenticNewsIntake_ClaimPackDelta_20260420_V4.md",
+    "AgenticSWE_AgenticNewsIntake_Handoff_20260420_V4.md"
+  ],
+  "router_rule": "Genau ein START_HERE-Dokument ist nach Integration der kanonische Einstiegspunkt fuer die naechste Session.",
+  "base_artifacts": {
+    "start_here_v3": "AgenticSWE_AgenticNewsIntake_START_HERE_20260409_V3.md",
+    "manifest_v3": "AgenticSWE_AgenticNewsIntake_Manifest_20260409_V3.json",
+    "source_register_v3": "AgenticSWE_AgenticNewsIntake_SourceRegister_20260409_V3.csv",
+    "claim_pack_v3": "AgenticSWE_AgenticNewsIntake_ClaimPack_20260409_V3.md",
+    "reading_queue_v3": "AgenticSWE_AgenticNewsIntake_ReadingQueue_20260409_V3.md",
+    "search_log_canonical": "AgenticSWE_AgenticNewsIntake_SearchLog_20260409_V2.jsonl"
+  },
+  "field_contract": {
+    "required_source_register_fields": [
+      "source_id",
+      "title",
+      "url",
+      "source_type",
+      "publisher_class",
+      "source_date",
+      "tier_research",
+      "fulltext_status",
+      "chat_covered",
+      "needs_recheck",
+      "dedupe_key",
+      "promotion_target",
+      "handbook_delta",
+      "notes_short"
+    ],
+    "allowed_promotion_target": [
+      "blackboard_only",
+      "library_only",
+      "handbook_candidate",
+      "template_candidate"
+    ],
+    "allowed_handbook_delta": [
+      "low",
+      "low_medium",
+      "medium",
+      "medium_high",
+      "high",
+      "very_high"
+    ],
+    "allowed_fulltext_status": [
+      "snippet-only",
+      "readme-reviewed",
+      "readme-plus-selected-files",
+      "page-reviewed",
+      "fulltext-reviewed",
+      "pdf-reviewed-in-chat",
+      "readme-plus-docs-reviewed",
+      "readme-plus-openapi-changelog",
+      "readme-plus-architecture-security",
+      "readme-plus-sample-agent-reviewed"
+    ]
+  },
+  "workflow_rules": [
+    "Neue Quellen zuerst im Delta-Register aufnehmen.",
+    "Jeden Intake-Schritt in den SearchLog-Append eintragen und spaeter in den kanonischen Log mergen.",
+    "Neue Source Cards nur bei echtem Mehrwert erstellen.",
+    "Promotion nicht implizit, sondern ueber ClaimPack begruenden.",
+    "Ohne eindeutiges Glossar- und Taxonomie-Mapping keine Promotion.",
+    "Derived surfaces und unresolved social snippets nicht als neue Primaerquellen eintragen."
+  ],
+  "closeout_delta": {
+    "new_unique_sources": 24,
+    "duplicates_suppressed": 1,
+    "derived_surfaces_suppressed": 0,
+    "social_snippet_only_retained": 2,
+    "source_cards_created": 0
+  },
+  "artifacts": {
+    "session_archive": "AgenticSWE_AgenticNewsIntake_SessionArchive_20260420_V4.md",
+    "handoff": "AgenticSWE_AgenticNewsIntake_Handoff_20260420_V4.md",
+    "next_session_prompt": "AgenticSWE_AgenticNewsIntake_NextSessionPrompt_20260420_V4.md",
+    "connector_index": "AgenticSWE_AgenticNewsIntake_ConnectorIndex_20260420_V4.json",
+    "source_register_delta": "AgenticSWE_AgenticNewsIntake_SourceRegisterDelta_20260420_V4.csv",
+    "reading_queue_delta": "AgenticSWE_AgenticNewsIntake_ReadingQueueDelta_20260420_V4.md",
+    "search_log_append": "AgenticSWE_AgenticNewsIntake_SearchLogAppend_20260420_V4.jsonl",
+    "claim_pack_delta": "AgenticSWE_AgenticNewsIntake_ClaimPackDelta_20260420_V4.md",
+    "materialization_guide": "AgenticSWE_AgenticNewsIntake_MaterializationGuide_20260420_V4.md"
+  }
+}
