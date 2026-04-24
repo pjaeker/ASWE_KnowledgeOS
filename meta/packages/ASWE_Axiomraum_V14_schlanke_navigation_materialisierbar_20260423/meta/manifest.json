@@ -1,0 +1,47 @@
+{
+  "package": "ASWE_Axiomraum_V14_schlanke_navigation_materialisierbar_20260423",
+  "purpose": "duplettenfreier repo-materialisierbarer Versionsverlauf des ASWE-Axiomraums",
+  "current_final": "final/ASWE_Axiomraum_Grundlagendokument_20260423_V11.md",
+  "current_evidence": "support/current/ASWE_Axiomraum_Zeilenbelegmatrix_20260423_V1.md",
+  "counts": {
+    "source_records": 120,
+    "top_level_md": 45,
+    "top_level_zip": 13,
+    "markdown_sources_including_zip_entries": 107,
+    "unique_markdown_contents": 74,
+    "unique_historical_markdown_files": 72
+  },
+  "required_files": [
+    "final/ASWE_Axiomraum_Grundlagendokument_20260423_V11.md",
+    "support/current/ASWE_Axiomraum_Zeilenbelegmatrix_20260423_V1.md",
+    "support/history/ASWE_Axiomraum_Deduplizierungsbericht_20260423_V1.md",
+    "support/history/ASWE_Axiomraum_Dateirollen_20260423_V1.md",
+    "support/history/ASWE_Axiomraum_Versionschronik_20260423_V1.md",
+    "support/history/ASWE_Axiomraum_Ableitungs_und_Supersessionsgraph_20260423_V1.md",
+    "support/history/ASWE_Axiomraum_Restmaengel_und_Nachzugslog_20260423_V1.md",
+    "support/package_sources/ASWE_Axiomraum_Paketquellenregister_20260423_V1.md",
+    "meta/README.md",
+    "meta/manifest.md",
+    "meta/checksums.sha256",
+    "meta/paket_pruefung.md",
+    "meta/pro_prompt.md",
+    "README.md",
+    "meta/ASWE_Axiomraum_Paketnavigation_20260423_V1.md",
+    "support/integration/ASWE_Axiomraum_Repo_Integrationsoptionen_20260423_V1.md",
+    "support/integration/ASWE_Axiomraum_Repo_Integrationsoptionen_20260423_V2.md"
+  ],
+  "navigation_enhanced": true,
+  "recommended_start_order": [
+    "README.md",
+    "meta/README.md",
+    "meta/ASWE_Axiomraum_Paketnavigation_20260423_V1.md",
+    "meta/manifest.md",
+    "final/ASWE_Axiomraum_Grundlagendokument_20260423_V11.md",
+    "support/current/ASWE_Axiomraum_Zeilenbelegmatrix_20260423_V1.md",
+    "support/integration/ASWE_Axiomraum_Repo_Integrationsoptionen_20260423_V1.md",
+    "support/history/ASWE_Axiomraum_Deduplizierungsbericht_20260423_V1.md"
+  ],
+  "navigation_reduced": true,
+  "integration_options_added": true,
+  "payload_addition_in_repo_materialization_v1": true
+}
